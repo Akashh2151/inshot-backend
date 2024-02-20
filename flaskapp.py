@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 from flask_jwt_extended import JWTManager
 from controller.signInsignUp import signUp_bp  
 from controller.signInsignUp import login_bp
+from controller.forgetpassword import forgetpassword_app
 from flask_cors import CORS
 # from controller.shop import shopapp
 # from controller.shop import newfrom
@@ -16,6 +17,7 @@ app.config['SECRET_KEY'] = '98c5bc0a178ff2d6c0c1471c6f3dc5e4'
 
 app.register_blueprint(signUp_bp)
 app.register_blueprint(login_bp)
+app.register_blueprint(forgetpassword_app)
 # app.register_blueprint(shopapp)
 # app.register_blueprint(newfrom)
 # app.register_blueprint(rating)
