@@ -156,3 +156,50 @@ def add_comment(post_id):
     except Exception as e:
         return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statuscode': 500}), 500
  
+
+
+
+
+@postcreation.route('/v1/user/categories', methods=['GET'])
+def get_user_categories():
+    user_id = request.headers.get('userId')
+    
+    if not user_id:
+        return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statuscode': 400}), 400
+    
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return jsonify({'body': {}, 'message': 'User not found', 'status': 'error', 'statuscode': 404}), 404
+    
+    try:
+        # Fetch distinct categories for the user's posts
+        categories = Post.objects(creator=user).distinct('category')
+        return jsonify({'body': {'categories': categories}, 'message': 'Categories fetched successfully', 'status': 'success', 'statuscode': 200}), 200
+    except Exception as e:
+        return jsonify({'body': {}, 'message': 'An error occurred: ' + str(e), 'status': 'error', 'statuscode': 500}), 500
+
+
+
+@postcreation.route('/v1/user/subcategories', methods=['GET'])
+def get_user_subcategories():
+    user_id = request.headers.get('userId')
+    category = request.args.get('category')  # Get category from query params
+    
+    if not user_id:
+        return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statuscode': 400}), 400
+    
+    if not category:
+        return jsonify({'body': {}, 'message': 'Category is missing', 'status': 'error', 'statuscode': 400}), 400
+    
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return jsonify({'body': {}, 'message': 'User not found', 'status': 'error', 'statuscode': 404}), 404
+    
+    try:
+        # Fetch distinct subcategories for the user's posts in the specified category
+        subcategories = Post.objects(creator=user, category=category).distinct('subcategory')
+        return jsonify({'body': {'subcategories': subcategories}, 'message': 'Subcategories fetched successfully', 'status': 'success', 'statuscode': 200}), 200
+    except Exception as e:
+        return jsonify({'body': {}, 'message': 'An error occurred: ' + str(e), 'status': 'error', 'statuscode': 500}), 500
