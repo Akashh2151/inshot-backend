@@ -67,6 +67,7 @@ def register_step1():
             email=email,
             password=userpassword,
             confirmPassword=confirmPassword,
+            userType="consumer", 
             profilePic=None
         )
 

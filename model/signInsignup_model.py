@@ -42,5 +42,6 @@ class User(Document):
     confirmPassword=StringField(required=True, max_length=100)
     # bundle = ListField(DynamicField())
     profilePic = StringField(required=False, null=True)
-    
+    userType = StringField(required=False, null=True)
+     
     
