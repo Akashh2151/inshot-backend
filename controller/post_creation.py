@@ -61,42 +61,111 @@ def view_post(post_id):
 
 
 
+# @postcreation.route('/v1/posts', methods=['GET'])
+# def get_user_posts():
+#     user_id = request.headers.get('userId')
+    
+#     if not user_id:
+#         return jsonify({'body': {},'message': 'UserID header is missing', 'status': 'error', 'statuscode': 400}), 200
+    
+#     try:
+#         # Ensure the user exists
+#         user = User.objects.get(id=user_id)
+#     except User.DoesNotExist:
+#         return jsonify({'body': {},'message': 'User not found','status': 'error', 'statuscode': 500}), 404
+    
+#     try:
+#         # Fetch posts created by the specified user
+#         user_posts = Post.objects(creator=user)
+#         posts_data = []
+        
+#         for post in user_posts:
+#             post_data = {
+#                 'id': str(post.id),
+#                 'title': post.title,
+#                 'summary': post.summary,
+#                 'post': post.post,
+#                 'category': post.category,
+#                 'subcategory': post.subcategory,
+#                 'likes': post.likes,
+#                 'dislikes': post.dislikes,
+#                 'shares': post.shares,
+#                 # 'created_at': post.created_at.strftime('%Y-%m-%d %H:%M:%S')  # Uncomment if created_at is included
+#             }
+#             posts_data.append(post_data)
+        
+#         return jsonify({'body': posts_data, 'message': 'User posts fetched successfully', 'status': 'success', 'statuscode': 200}), 200
+#     except Exception as e:
+#         return jsonify({'body': {}, 'message': 'An error occurred: ' + str(e), 'status': 'error', 'statuscode': 500}), 500
+
+def paginate_query(query, page, page_size):
+    # Calculate number of posts to skip
+    skip = (page - 1) * page_size
+    # Limit the results and skip the previous pages
+    posts = query.skip(skip).limit(page_size)
+    # Get total count of documents in the collection
+    total_items = query.count()
+    return posts, total_items
+
 @postcreation.route('/v1/posts', methods=['GET'])
 def get_user_posts():
     user_id = request.headers.get('userId')
-    
+    page = request.args.get('page', default=1, type=int)
+    page_size = request.args.get('pageSize', default=10, type=int)
+
     if not user_id:
-        return jsonify({'body': {},'message': 'UserID header is missing', 'status': 'error', 'statuscode': 400}), 200
-    
+        return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}), 400
+
     try:
-        # Ensure the user exists
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
-        return jsonify({'body': {},'message': 'User not found','status': 'error', 'statuscode': 500}), 404
-    
+        return jsonify({'body': {}, 'message': 'User not found', 'status': 'error', 'statusCode': 404}), 404
+
     try:
-        # Fetch posts created by the specified user
-        user_posts = Post.objects(creator=user)
-        posts_data = []
-        
-        for post in user_posts:
-            post_data = {
-                'id': str(post.id),
-                'title': post.title,
-                'summary': post.summary,
-                'post': post.post,
-                'category': post.category,
-                'subcategory': post.subcategory,
-                'likes': post.likes,
-                'dislikes': post.dislikes,
-                'shares': post.shares,
-                # 'created_at': post.created_at.strftime('%Y-%m-%d %H:%M:%S')  # Uncomment if created_at is included
-            }
-            posts_data.append(post_data)
-        
-        return jsonify({'body': posts_data, 'message': 'User posts fetched successfully', 'status': 'success', 'statuscode': 200}), 200
+        query = Post.objects(creator=user)  # This is your query
+        # Implement pagination
+        paginated_posts, total_items = paginate_query(query, page, page_size)
+        posts_data = [{
+            'id': str(post.id),
+            'title': post.title,
+            'summary': post.summary,
+            'post': post.post,
+            'category': post.category,
+            'subcategory': post.subcategory,
+            'likes': post.likes,
+            'dislikes': post.dislikes,
+            'shares': post.shares,
+        } for post in paginated_posts]
+
+        total_pages = (total_items + page_size - 1) // page_size  # Calculate total pages
+
+        return jsonify({
+            'body': posts_data,
+            'totalItems': total_items,
+            'totalPages': total_pages,
+            'currentPage': page,
+            'pageSize': page_size,
+            'message': 'User posts fetched successfully',
+            'status': 'success',
+            'statusCode': 200
+        }), 200
     except Exception as e:
-        return jsonify({'body': {}, 'message': 'An error occurred: ' + str(e), 'status': 'error', 'statuscode': 500}), 500
+        return jsonify({'body': {}, 'message': 'An error occurred: ' + str(e), 'status': 'error', 'statusCode': 500}), 500
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -156,6 +225,10 @@ def add_comment(post_id):
     except Exception as e:
         return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statuscode': 500}), 500
  
+
+
+
+
 
 
 
