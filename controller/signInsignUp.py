@@ -7,6 +7,7 @@ from bson import ObjectId
 from flask import Blueprint, current_app, request, jsonify
 from flask_jwt_extended import jwt_required
 import jwt
+ 
 from model.signInsignup_model import  User
 # from configurations.configuration import resto_data,shop_data
 from security.allSecurity import email_regex,password_regex,phone_number
@@ -31,30 +32,30 @@ def register_step1():
 
         # Check if the email or mobile is already registered
         if User.objects(email=email).first() or User.objects(mobile=mobile).first():
-            response = {"body": {}, "status": "error", "statuscode": 409, "message": 'Email or mobile is already registered'}
+            response = {"body": {}, "status": "error", "statusCode": 409, "message": 'Email or mobile is already registered'}
             return jsonify(response),200
         
         if password != confirmPassword:
-            response = {"body": {}, "status": "error", "statuscode": 400, "message": 'Password and confirm password do not match'}
+            response = {"body": {}, "status": "error", "statusCode": 400, "message": 'Password and confirm password do not match'}
             return jsonify(response),200
 
         # Validate required fields
         required_fields = [name, email, password, mobile,confirmPassword]
         if not all(required_fields):
-            response = {"body": {}, "status": "error", "statuscode": 400, "message": 'All required fields must be provided'}
+            response = {"body": {}, "status": "error", "statusCode": 400, "message": 'All required fields must be provided'}
             return jsonify(response), 200
         
         # Validate password and email format
         if not re.match(password_regex, password):
-            response = {'body':  {}, 'status': 'error', 'statuscode': 422, 'message': 'Password must be at least 8 to 16 characters long'}
+            response = {'body':  {}, 'status': 'error', 'statusCode': 422, 'message': 'Password must be at least 8 to 16 characters long'}
             return jsonify(response),200
 
         if not re.match(email_regex, email):
-            response = {'body':  {}, 'status': 'error', 'statuscode': 422, 'message': 'Email requirement not met'}
+            response = {'body':  {}, 'status': 'error', 'statusCode': 422, 'message': 'Email requirement not met'}
             return jsonify(response),200
         
         if not re.match(phone_number,mobile):
-            response = {'body': {}, 'status': 'error', 'statuscode': 422, 'message': 'Mobile number must be exactly 10 digits long and should only contain numeric characters.'}
+            response = {'body': {}, 'status': 'error', 'statusCode': 422, 'message': 'Mobile number must be exactly 10 digits long and should only contain numeric characters.'}
             return jsonify(response),200
  
         # Hash the password
@@ -74,7 +75,7 @@ def register_step1():
         # Save the user to the database
         user.save()
 
-        response = {"body": {}, "status": "success", "statusCode": 200, "message": 'Registration successfully'}
+        response = {"body": {}, "status": "success", "statusCode": 201, "message": 'Registration successfully'}
         return jsonify(response), 200
 
     except Exception as e:
@@ -82,6 +83,8 @@ def register_step1():
         return jsonify(response), 500
 
 
+ 
+    
 # ____________________________________________________________________________________________________________
 # all working 
 # @signUp_bp.route('/register/step1', methods=['POST'])
@@ -271,7 +274,7 @@ def login():
 
         # Validate the presence of 'email' and 'password'
         if email is None or password is None:
-            return jsonify({'body': {},'message': 'Email and password are required',"status": "error",'statusCode': 401}), 200
+            return jsonify({'body': {},'message': 'Email and password are required',"status": "error",'statusCode': 400}), 200
 
         # Find the user by email
         user = User.objects(email=email).first()

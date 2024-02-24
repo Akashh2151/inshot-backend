@@ -19,6 +19,7 @@ class Post(Document):
     likes = IntField(default=0)
     dislikes = IntField(default=0)
     shares = IntField(default=0)
+    comment = IntField(default=0)
     created_at = DateTimeField(default=datetime.datetime.utcnow)
 
  
@@ -28,7 +29,22 @@ class Comment(Document):
     content = StringField(required=True)
     created_at = DateTimeField(default=datetime.datetime.utcnow)
 
+class Like(Document):
+    post = ReferenceField(Post, required=True)
+    user = ReferenceField(User, required=True)
+    created_at = DateTimeField(default=datetime.datetime.utcnow)
 
+class Dislike(Document):
+    post = ReferenceField(Post, required=True)
+    user = ReferenceField(User, required=True)
+    created_at = DateTimeField(default=datetime.datetime.utcnow)
+
+class Share(Document):
+    post = ReferenceField(Post, required=True)
+    user = ReferenceField(User, required=True)
+    created_at = DateTimeField(default=datetime.datetime.utcnow)
+
+ 
 # class Reaction(Document):
 #     post = ReferenceField(Post, required=True)
 #     author = ReferenceField(User, required=True)
