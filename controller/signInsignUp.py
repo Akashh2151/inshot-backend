@@ -229,7 +229,7 @@ def register_step1():
 #                 print(user.password)
 #                 if provided_password_hash == user.password:
 #                     payload = {
-#                         'user_id': str(user.id),
+#                         'userId': str(user.id),
 #                         'sub': '1',
 #                         'jti': str(uuid.uuid4()),
 #                         'identity': user.email,
@@ -283,7 +283,7 @@ def login():
             provided_password_hash = hashlib.sha256(password.encode()).hexdigest()
             if provided_password_hash == user.password:
                 payload = {
-                    'user_id': str(user.id),
+                    'userId': str(user.id),
                     'sub': '1',
                     'jti': str(uuid.uuid4()),
                     "name":user.name,
