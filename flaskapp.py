@@ -4,6 +4,7 @@ from controller.signInsignUp import signUp_bp
 from controller.signInsignUp import login_bp
 from controller.forgetpassword import forgetpassword_app
 from controller.post_creation import postcreation
+from controller.member_controller import member
 from flask_cors import CORS
 # from controller.shop import shopapp
 # from controller.shop import newfrom
@@ -20,6 +21,7 @@ app.register_blueprint(signUp_bp)
 app.register_blueprint(login_bp)
 app.register_blueprint(forgetpassword_app)
 app.register_blueprint(postcreation)
+app.register_blueprint(member)
 # app.register_blueprint(shopapp)
 # app.register_blueprint(newfrom)
 # app.register_blueprint(rating)

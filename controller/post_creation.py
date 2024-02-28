@@ -13,24 +13,24 @@ def create_post():
         user_id = request.headers.get('userId')     
 
         if not user_id:
-            response = {'body': {},'message': 'UserID header is missing','status': 'error','statuscode': 400}
+            response = {'body': {},'message': 'UserID header is missing','status': 'error','statusCode': 400}
             return jsonify(response), 200   
         
         user = User.objects(id=user_id).first()     
 
         if not user:
-            response = {'body': {},'message': 'The user ID entered does not correspond to an active user','status': 'error','statuscode': 404}
+            response = {'body': {},'message': 'The user ID entered does not correspond to an active user','status': 'error','statusCode': 404}
             return jsonify(response), 200    
 
         title = data.get('title')
         # Regex to match titles with characters and single spaces between words
         if not re.match("^[A-Za-z]+( [A-Za-z]+)*$", title):
-            return jsonify({'body': {}, 'message': 'Title must only contain letters and single spaces between words', 'status': 'error', 'statuscode': 400}), 200
+            return jsonify({'body': {}, 'message': 'Title must only contain letters and single spaces between words', 'status': 'error', 'statusCode': 400}), 200
                       
         # Check if a post with the same title already exists
         existing_post = Post.objects(title=title).first()
         if existing_post:
-            return jsonify({'body': {}, 'message': 'A post with this title already exists', 'status': 'error', 'statuscode': 400}), 200
+            return jsonify({'body': {}, 'message': 'A post with this title already exists', 'status': 'error', 'statusCode': 400}), 200
 
         post = Post(
             title=data.get('title'),
@@ -42,7 +42,7 @@ def create_post():
         )
         post.save()
         return jsonify({'body': data,'message': 'Post created successfully','postid': str(post.id),'status':'success',
-                'statuscode': 201}), 200
+                'statusCode': 201}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
@@ -63,11 +63,11 @@ def view_post(post_id):
  
         }
         
-        response = {'body': post_data,'message': 'Post retrieved successfully','status': 'success','statuscode': 200}
+        response = {'body': post_data,'message': 'Post retrieved successfully','status': 'success','statusCode': 200}
         return jsonify(response), 200
     
     except Post.DoesNotExist:
-        response = {'body': {},'message': 'Post not found','status': 'error','statuscode': 404}
+        response = {'body': {},'message': 'Post not found','status': 'error','statusCode': 404}
         return jsonify(response), 404
 
 
@@ -186,7 +186,7 @@ def like_post(post_id):
     try:
         user_id = request.headers.get('userId')
         if not user_id:
-            return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statuscode': 400}), 200
+            return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}), 200
 
         user = User.objects.get(id=user_id)
         post = Post.objects.get(id=post_id)
@@ -194,17 +194,17 @@ def like_post(post_id):
         # Check if the user has already liked this post
         existing_like = Like.objects(post=post, user=user).first()
         if existing_like:
-            return jsonify({'body': {}, 'message': 'User already liked this post', 'status': 'error', 'statuscode': 400}), 200
+            return jsonify({'body': {}, 'message': 'User already liked this post', 'status': 'error', 'statusCode': 400}), 200
 
         like = Like(post=post, user=user)
         like.save()
         post.update(inc__likes=1)
         post.reload()
-        return jsonify({'body': {}, 'message': 'Like added successfully', 'status': 'success', 'statuscode': 201}), 201
+        return jsonify({'body': {}, 'message': 'Like added successfully', 'status': 'success', 'statusCode': 201}), 201
     except (Post.DoesNotExist, User.DoesNotExist):
-        return jsonify({'body': {}, 'message': 'Post or User not found', 'status': 'error', 'statuscode': 404}), 404
+        return jsonify({'body': {}, 'message': 'Post or User not found', 'status': 'error', 'statusCode': 404}), 404
     except Exception as e:
-        return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statuscode': 500}), 500
+        return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}), 500
 
     
 
@@ -213,7 +213,7 @@ def dislike_post(post_id):
     try:
         user_id = request.headers.get('userId')
         if not user_id:
-            return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statuscode': 400}), 200
+            return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}), 200
 
         user = User.objects.get(id=user_id)
         post = Post.objects.get(id=post_id)
@@ -221,17 +221,17 @@ def dislike_post(post_id):
         # Check if the user has already disliked this post
         existing_dislike = Dislike.objects(post=post, user=user).first()
         if existing_dislike:
-            return jsonify({'body': {}, 'message': 'User already disliked this post', 'status': 'error', 'statuscode': 400}), 200
+            return jsonify({'body': {}, 'message': 'User already disliked this post', 'status': 'error', 'statusCode': 400}), 200
 
         dislike = Dislike(post=post, user=user)
         dislike.save()
         post.update(inc__dislikes=1)
         post.reload()
-        return jsonify({'body': {}, 'message': 'Dislike added successfully', 'status': 'success', 'statuscode': 201}), 201
+        return jsonify({'body': {}, 'message': 'Dislike added successfully', 'status': 'success', 'statusCode': 201}), 201
     except (Post.DoesNotExist, User.DoesNotExist):
-        return jsonify({'body': {}, 'message': 'Post or User not found', 'status': 'error', 'statuscode': 404}), 404
+        return jsonify({'body': {}, 'message': 'Post or User not found', 'status': 'error', 'statusCode': 404}), 404
     except Exception as e:
-        return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statuscode': 500}), 500
+        return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}), 500
 
 
 # @postcreation.route('/v1/posts/<post_id>/share', methods=['POST'])
@@ -248,24 +248,24 @@ def dislike_post(post_id):
 @postcreation.route('/v1/posts/<post_id>/share', methods=['POST'])
 def share_post(post_id):
     try:
-        user_id = request.headers.get('userId')
-        if not user_id:
-            return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statuscode': 400}), 400
+        # user_id = request.headers.get('userId')
+        # if not user_id:
+        #     return jsonify({'body': {}, 'message': 'userId header is missing', 'status': 'error', 'statusCode': 400}), 400
 
-        user = User.objects.get(id=user_id)
+        # user = User.objects.get(id=user_id)
         post = Post.objects.get(id=post_id)
 
         # Optionally, you could check for excessive sharing in a short period and limit it here
 
-        share = Share(post=post, user=user)
+        share = Share(post=post)
         share.save()
         post.update(inc__shares=1)
         post.reload()
-        return jsonify({'body': {}, 'message': 'Post shared successfully', 'status': 'success', 'statuscode': 201}), 201
+        return jsonify({'body': {}, 'message': 'Post shared successfully', 'status': 'success', 'statusCode': 201}), 201
     except (Post.DoesNotExist, User.DoesNotExist):
-        return jsonify({'body': {}, 'message': 'Post or User not found', 'status': 'error', 'statuscode': 404}), 404
+        return jsonify({'body': {}, 'message': 'Post or User not found', 'status': 'error', 'statusCode': 404}), 404
     except Exception as e:
-        return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statuscode': 500}), 500
+        return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}), 500
 
 
 @postcreation.route('/v1/posts/<post_id>/comment', methods=['POST'])
@@ -273,23 +273,23 @@ def add_comment(post_id):
     try:
         user_id = request.headers.get('userId')
         if not user_id:
-            return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statuscode': 400}), 400
+            return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}), 400
         user = User.objects.get(id=user_id)
         data = request.json
         comment_content = data.get('comment')
         if not comment_content:
-            return jsonify({'body': {}, 'message': 'Comment content is missing', 'status': 'error', 'statuscode': 400}), 400
+            return jsonify({'body': {}, 'message': 'Comment content is missing', 'status': 'error', 'statusCode': 400}), 400
 
         post = Post.objects.get(id=post_id)
         comment = Comment(post=post, author=user, content=comment_content)
         comment.save()
         post.update(inc__comment=1)
         post.reload()
-        return jsonify({'body': {}, 'message': 'Comment added successfully', 'status': 'success', 'statuscode': 201}), 201
+        return jsonify({'body': {}, 'message': 'Comment added successfully', 'status': 'success', 'statusCode': 201}), 201
     except (Post.DoesNotExist, User.DoesNotExist):
-        return jsonify({'body': {}, 'message': 'Post or User not found', 'status': 'error', 'statuscode': 404}), 404
+        return jsonify({'body': {}, 'message': 'Post or User not found', 'status': 'error', 'statusCode': 404}), 404
     except Exception as e:
-        return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statuscode': 500}), 500
+        return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}), 500
  
 
 
@@ -318,7 +318,7 @@ def get_post_interactions(post_id):
         return jsonify({
             'message': 'Interactions fetched successfully',
             'status': 'success',
-            'statuscode': 200,
+            'statusCode': 200,
             'data': {
                 'likes': like_users,
                 'dislikes': dislike_users,
@@ -331,18 +331,15 @@ def get_post_interactions(post_id):
             'body': {},
             'message': 'Post not found',
             'status': 'error',
-            'statuscode': 404
+            'statusCode': 404
         }), 404
     except Exception as e:
         return jsonify({
             'body': {},
             'message': str(e),
             'status': 'error',
-            'statuscode': 500
+            'statusCode': 500
         }), 500
-
-
-
 
 
 
@@ -363,19 +360,20 @@ def get_user_categories():
     user_id = request.headers.get('userId')
     
     if not user_id:
-        return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statuscode': 400}), 400
+        return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}), 400
     
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
-        return jsonify({'body': {}, 'message': 'User not found', 'status': 'error', 'statuscode': 404}), 404
+        return jsonify({'body': {}, 'message': 'User not found', 'status': 'error', 'statusCode': 404}), 404
     
     try:
-        # Fetch distinct categories for the user's posts
         categories = Post.objects(creator=user).distinct('category')
-        return jsonify({'body': {'categories': categories}, 'message': 'Categories fetched successfully', 'status': 'success', 'statuscode': 200}), 200
+        # Create an array of objects with each category as a separate object
+        categories_response = [{'category': category} for category in categories]
+        return jsonify({'body': {'categories': categories_response}, 'message': 'Categories fetched successfully', 'status': 'success', 'statusCode': 200}), 200
     except Exception as e:
-        return jsonify({'body': {}, 'message': 'An error occurred:' + str(e), 'status': 'error', 'statuscode': 500}), 500
+        return jsonify({'body': {}, 'message': 'An error occurred:' + str(e), 'status': 'error', 'statusCode': 500}), 500
 
 
 
@@ -385,19 +383,20 @@ def get_user_subcategories():
     category = request.args.get('category')  # Get category from query params
     
     if not user_id:
-        return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statuscode': 400}), 200
+        return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}), 400
     
     if not category:
-        return jsonify({'body': {}, 'message': 'Category is missing', 'status': 'error', 'statuscode': 400}), 200
+        return jsonify({'body': {}, 'message': 'Category is missing', 'status': 'error', 'statusCode': 400}), 400
     
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
-        return jsonify({'body': {}, 'message': 'User not found', 'status': 'error', 'statuscode': 404}), 404
+        return jsonify({'body': {}, 'message': 'User not found', 'status': 'error', 'statusCode': 404}), 404
     
     try:
-        # Fetch distinct subcategories for the user's posts in the specified category
         subcategories = Post.objects(creator=user, category=category).distinct('subcategory')
-        return jsonify({'body': {'subcategories': subcategories}, 'message': 'Subcategories fetched successfully', 'status': 'success', 'statuscode': 200}), 200
+        # Create an array of objects with each subcategory as a separate object
+        subcategories_response = [{'subcategory': subcategory} for subcategory in subcategories]
+        return jsonify({'body': {'subcategories': subcategories_response}, 'message': 'Subcategories fetched successfully', 'status': 'success', 'statusCode': 200}), 200
     except Exception as e:
-        return jsonify({'body': {}, 'message': 'An error occurred: ' + str(e), 'status': 'error', 'statuscode': 500}), 500
+        return jsonify({'body': {}, 'message': 'An error occurred: ' + str(e), 'status': 'error', 'statusCode': 500}), 500

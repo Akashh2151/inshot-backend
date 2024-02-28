@@ -49,7 +49,7 @@ def send_otp():
             response = {
                 'body': {},
                 'status': 'error',
-                'statuscode': 400,
+                'statusCode': 400,
                 'message': 'UserID header is missing'
             }
             return jsonify(response), 200
@@ -58,7 +58,7 @@ def send_otp():
             response = {
                 'body': {},
                 'status': 'error',
-                'statuscode': 422,
+                'statusCode': 422,
                 'message': 'Email format is invalid'
             }
             return jsonify(response), 200
@@ -68,7 +68,7 @@ def send_otp():
             response = {
                 'body': {},
                 'status': 'error',
-                'statuscode': 404,
+                'statusCode': 404,
                 'message': 'The user ID entered does not correspond to an active user or email mismatch'
             }
             return jsonify(response), 200
@@ -81,7 +81,7 @@ def send_otp():
         response = {
             'body': {},
             'status': 'success',
-            'statuscode': 200,
+            'statusCode': 200,
             'message': 'OTP sent successfully'
         }
         return jsonify(response), 200
@@ -90,7 +90,7 @@ def send_otp():
         response = {
             'body': {},
             'status': 'error',
-            'statuscode': 500,
+            'statusCode': 500,
             'message': f'An error occurred: {str(e)}'
         }
         return jsonify(response), 500
@@ -108,7 +108,7 @@ def validate_otp():
             response = {
                 'body': {},
                 'status': 'error',
-                'statuscode': 404,
+                'statusCode': 404,
                 'message': 'The user ID entered does not correspond to an active user'
             }
             return jsonify(response), 200
@@ -117,7 +117,7 @@ def validate_otp():
             response = {
                 'body': {},
                 'status': 'success',
-                'statuscode': 200,
+                'statusCode': 200,
                 'message': 'OTP is valid'
             }
             return jsonify(response), 200
@@ -125,7 +125,7 @@ def validate_otp():
             response = {
                 'body': {},
                 'status': 'error',
-                'statuscode': 400,
+                'statusCode': 400,
                 'message': 'Invalid OTP'
             }
             return jsonify(response),200
@@ -133,7 +133,7 @@ def validate_otp():
         response = {
             'body': {},
             'status': 'error',
-            'statuscode': 500,
+            'statusCode': 500,
             'message': f'An error occurred: {str(e)}'
         }
         return jsonify(response), 500
@@ -157,7 +157,7 @@ def change_password():
                 'body': {},
                 'message': 'The user ID entered does not correspond to an active user or email mismatch',
                 'status': 'error',
-                'statuscode': 404
+                'statusCode': 404
                 
             }
             return jsonify(response), 200
@@ -168,7 +168,7 @@ def change_password():
                 'body': {},
                 'message': 'Email format is invalid',
                 'status': 'error',
-                'statuscode': 422
+                'statusCode': 422
                 
             }
             return jsonify(response), 200
@@ -185,7 +185,7 @@ def change_password():
                 response = {
                     'body': {},
                     'status': 'error',
-                    'statuscode': 400,
+                    'statusCode': 400,
                     'message': 'Password and confirmation do not match'
                 }
                 return jsonify(response), 200
@@ -199,7 +199,7 @@ def change_password():
                 response = {
                     'body': {},
                     'status': 'success',
-                    'statuscode': 200,
+                    'statusCode': 200,
                     'message': 'Password changed successfully'
                 }
                 return jsonify(response), 200
@@ -207,7 +207,7 @@ def change_password():
                 response = {
                     'body': {},
                     'status': 'error',
-                    'statuscode': 404,
+                    'statusCode': 404,
                     'message': 'User not found'
                 }
                 return jsonify(response), 200
@@ -215,7 +215,7 @@ def change_password():
             response = {
                 'body': {},
                 'status': 'error',
-                'statuscode': 400,
+                'statusCode': 400,
                 'message': 'Invalid OTP'
             }
             return jsonify(response), 200
@@ -223,7 +223,7 @@ def change_password():
         response = {
             'body': {},
             'status': 'error',
-            'statuscode': 500,
+            'statusCode': 500,
             'message': f'An error occurred: {str(e)}'
         }
         return jsonify(response), 500
