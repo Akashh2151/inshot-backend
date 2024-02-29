@@ -109,21 +109,20 @@ def view_post(post_id):
 #     except Exception as e:
 #         return jsonify({'body': {}, 'message': 'An error occurred: ' + str(e), 'status': 'error', 'statuscode': 500}), 500
 
+
 def paginate_query(query, page, page_size):
-    # Calculate number of posts to skip
     skip = (page - 1) * page_size
-    # Limit the results and skip the previous pages
     posts = query.skip(skip).limit(page_size)
-    # Get total count of documents in the collection
     total_items = query.count()
     return posts, total_items
- 
- 
+
 @postcreation.route('/v1/posts', methods=['GET'])
 def get_user_posts():
     user_id = request.headers.get('userId')
     page = request.args.get('page', default=1, type=int)
     page_size = request.args.get('pageSize', default=10, type=int)
+    category = request.args.get('category', default=None)
+    subCategory = request.args.get('subCategory', default=None)
 
     if not user_id:
         return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}), 400
@@ -134,7 +133,17 @@ def get_user_posts():
         return jsonify({'body': {}, 'message': 'User not found', 'status': 'error', 'statusCode': 404}), 404
 
     try:
-        query = Post.objects(creator=user)  # This is your query
+        # Start with a basic query filtering by the creator (user)
+        query = Post.objects(creator=user)
+
+        # If category is specified, filter by category
+        if category:
+            query = query.filter(category=category)
+
+        # If subCategory is specified, filter by subCategory
+        if subCategory:
+            query = query.filter(subCategory=subCategory)
+
         # Implement pagination
         paginated_posts, total_items = paginate_query(query, page, page_size)
         posts_data = [{
@@ -149,7 +158,7 @@ def get_user_posts():
             'shares': post.shares,
         } for post in paginated_posts]
 
-        total_pages = (total_items + page_size - 1) // page_size  # Calculate total pages
+        total_pages = (total_items + page_size - 1) // page_size
 
         return jsonify({
             'body': posts_data,
@@ -163,12 +172,6 @@ def get_user_posts():
         }), 200
     except Exception as e:
         return jsonify({'body': {}, 'message': 'An error occurred: ' + str(e), 'status': 'error', 'statusCode': 500}), 500
-
-
-
-
-
-
 
 
 
