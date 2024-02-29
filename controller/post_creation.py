@@ -37,7 +37,7 @@ def create_post():
             summary=data.get('summary'),
             post=data.get('post'),
             category=data.get('category'),
-            subcategory=data.get('subcategory'),
+            subCategory=data.get('subCategory'),
             creator=user,
         )
         post.save()
@@ -56,7 +56,7 @@ def view_post(post_id):
             'summary': post.summary,
             'post': post.post,
             'category': post.category,
-            'subcategory': post.subcategory,
+            'subCategory': post.subCategory,
             'likes': post.likes,  
             'dislikes': post.dislikes,
             'shares': post.shares,
@@ -97,7 +97,7 @@ def view_post(post_id):
 #                 'summary': post.summary,
 #                 'post': post.post,
 #                 'category': post.category,
-#                 'subcategory': post.subcategory,
+#                 'subCategory': post.subCategory,
 #                 'likes': post.likes,
 #                 'dislikes': post.dislikes,
 #                 'shares': post.shares,
@@ -117,7 +117,8 @@ def paginate_query(query, page, page_size):
     # Get total count of documents in the collection
     total_items = query.count()
     return posts, total_items
-
+ 
+ 
 @postcreation.route('/v1/posts', methods=['GET'])
 def get_user_posts():
     user_id = request.headers.get('userId')
@@ -142,7 +143,7 @@ def get_user_posts():
             'summary': post.summary,
             'post': post.post,
             'category': post.category,
-            'subcategory': post.subcategory,
+            'subCategory': post.subCategory,
             'likes': post.likes,
             'dislikes': post.dislikes,
             'shares': post.shares,
@@ -181,6 +182,70 @@ def get_user_posts():
 
 
 
+# @postcreation.route('/v1/posts/<post_id>/like', methods=['POST'])
+# def like_post(post_id):
+#     try:
+#         user_id = request.headers.get('userId')
+#         if not user_id:
+#             return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}), 200
+
+#         user = User.objects.get(id=user_id)
+#         post = Post.objects.get(id=post_id)
+
+#         # Check if the user has already liked this post
+#         existing_like = Like.objects(post=post, user=user).first()
+#         if existing_like:
+#             return jsonify({'body': {}, 'message': 'User already liked this post', 'status': 'error', 'statusCode': 400}), 200
+
+#         like = Like(post=post, user=user)
+#         like.save()
+#         post.update(inc__likes=1)
+#         post.reload()
+#         return jsonify({'body': {}, 'message': 'Like added successfully', 'status': 'success', 'statusCode': 201}), 201
+#     except (Post.DoesNotExist, User.DoesNotExist):
+#         return jsonify({'body': {}, 'message': 'Post or User not found', 'status': 'error', 'statusCode': 404}), 404
+#     except Exception as e:
+#         return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}), 500
+
+    
+
+# @postcreation.route('/v1/posts/<post_id>/dislike', methods=['POST'])
+# def dislike_post(post_id):
+#     try:
+#         user_id = request.headers.get('userId')
+#         if not user_id:
+#             return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}), 200
+
+#         user = User.objects.get(id=user_id)
+#         post = Post.objects.get(id=post_id)
+
+#         # Check if the user has already disliked this post
+#         existing_dislike = Dislike.objects(post=post, user=user).first()
+#         if existing_dislike:
+#             return jsonify({'body': {}, 'message': 'User already disliked this post', 'status': 'error', 'statusCode': 400}), 200
+
+#         dislike = Dislike(post=post, user=user)
+#         dislike.save()
+#         post.update(inc__dislikes=1)
+#         post.reload()
+#         return jsonify({'body': {}, 'message': 'Dislike added successfully', 'status': 'success', 'statusCode': 201}), 201
+#     except (Post.DoesNotExist, User.DoesNotExist):
+#         return jsonify({'body': {}, 'message': 'Post or User not found', 'status': 'error', 'statusCode': 404}), 404
+#     except Exception as e:
+#         return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}), 500
+
+# @postcreation.route('/v1/posts/<post_id>/share', methods=['POST'])
+# def share_post(post_id):
+#     try:
+#         post = Post.objects.get(id=post_id)
+#         post.update(inc__shares=1)
+#         post.reload()
+#         return jsonify({'body': {'shares': post.shares}, 'message': 'Post shared successfully', 'status': 'success', 'statuscode': 200}), 200
+#     except Post.DoesNotExist:
+#         return jsonify({'body': {}, 'message': 'Post not found', 'status': 'error', 'statuscode': 404}), 404
+
+
+
 @postcreation.route('/v1/posts/<post_id>/like', methods=['POST'])
 def like_post(post_id):
     try:
@@ -196,6 +261,12 @@ def like_post(post_id):
         if existing_like:
             return jsonify({'body': {}, 'message': 'User already liked this post', 'status': 'error', 'statusCode': 400}), 200
 
+        # Check if a dislike exists and remove it if so
+        existing_dislike = Dislike.objects(post=post, user=user).first()
+        if existing_dislike:
+            existing_dislike.delete()
+            post.update(dec__dislikes=1)
+
         like = Like(post=post, user=user)
         like.save()
         post.update(inc__likes=1)
@@ -206,7 +277,6 @@ def like_post(post_id):
     except Exception as e:
         return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}), 500
 
-    
 
 @postcreation.route('/v1/posts/<post_id>/dislike', methods=['POST'])
 def dislike_post(post_id):
@@ -223,6 +293,12 @@ def dislike_post(post_id):
         if existing_dislike:
             return jsonify({'body': {}, 'message': 'User already disliked this post', 'status': 'error', 'statusCode': 400}), 200
 
+        # Check if a like exists and remove it if so
+        existing_like = Like.objects(post=post, user=user).first()
+        if existing_like:
+            existing_like.delete()
+            post.update(dec__likes=1)
+
         dislike = Dislike(post=post, user=user)
         dislike.save()
         post.update(inc__dislikes=1)
@@ -234,15 +310,7 @@ def dislike_post(post_id):
         return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}), 500
 
 
-# @postcreation.route('/v1/posts/<post_id>/share', methods=['POST'])
-# def share_post(post_id):
-#     try:
-#         post = Post.objects.get(id=post_id)
-#         post.update(inc__shares=1)
-#         post.reload()
-#         return jsonify({'body': {'shares': post.shares}, 'message': 'Post shared successfully', 'status': 'success', 'statuscode': 200}), 200
-#     except Post.DoesNotExist:
-#         return jsonify({'body': {}, 'message': 'Post not found', 'status': 'error', 'statuscode': 404}), 404
+
 
 
 @postcreation.route('/v1/posts/<post_id>/share', methods=['POST'])
@@ -394,9 +462,9 @@ def get_user_subcategories():
         return jsonify({'body': {}, 'message': 'User not found', 'status': 'error', 'statusCode': 404}), 404
     
     try:
-        subcategories = Post.objects(creator=user, category=category).distinct('subcategory')
-        # Create an array of objects with each subcategory as a separate object
-        subcategories_response = [{'subcategory': subcategory} for subcategory in subcategories]
+        subcategories = Post.objects(creator=user, category=category).distinct('subCategory')
+        # Create an array of objects with each subCategory as a separate object
+        subcategories_response = [{'subCategory': subCategory} for subCategory in subcategories]
         return jsonify({'body': {'subcategories': subcategories_response}, 'message': 'Subcategories fetched successfully', 'status': 'success', 'statusCode': 200}), 200
     except Exception as e:
         return jsonify({'body': {}, 'message': 'An error occurred: ' + str(e), 'status': 'error', 'statusCode': 500}), 500

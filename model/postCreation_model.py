@@ -14,7 +14,7 @@ class Post(Document):
     summary = StringField(required=True)
     post = StringField(required=True)  
     category = StringField(required=True)
-    subcategory=StringField(required=True)
+    subCategory=StringField(required=True)
     creator = ReferenceField(User, reverse_delete_rule=2)  
     likes = IntField(default=0)
     dislikes = IntField(default=0)
@@ -41,7 +41,7 @@ class Dislike(Document):
 
 class Share(Document):
     post = ReferenceField(Post, required=True)
-    user = ReferenceField(User, required=True)
+    # user = ReferenceField(required=True,null=True)
     created_at = DateTimeField(default=datetime.datetime.utcnow)
 
  
