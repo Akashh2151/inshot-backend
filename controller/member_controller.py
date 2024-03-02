@@ -5,34 +5,18 @@ from model.signInsignup_model import User
 member=Blueprint('member',__name__)
 
 
-@member.route('/v1/category', methods=['GET'])
+
+@app.route('/v1/category', methods=['GET'])
 def get_posts_by_user_categories():
     try:
-        user_id = request.headers.get('userId')
-
-        if not user_id:
-            response = {'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}
-            return jsonify(response), 200
-
-        user = User.objects(id=user_id).first()
-        if not user:
-            response = {'body': {}, 'message': 'The user ID entered does not correspond to an active user', 'status': 'error', 'statusCode': 404}
-            return jsonify(response), 200
-
-        # Assuming user has a field named categories which contains a list of categories
-       # user_categories = user.categories
-
-        # Query posts by categories that the user is interested in
-        posts = Post.objects.filter(creator=user)
+        # Assuming you don't need user authentication for this endpoint
+        
+        # Query all posts regardless of user
+        posts = Post.objects.all()
 
         # Serialize posts data
         posts_data = [{
-            # 'title': post.title,
-            # 'summary': post.summary,
-            # 'post': post.post,
             'category': post.category,
-            # 'subcategory': post.subcategory,
-            # 'creator': post.creator.name  # Assuming creator has a username field
         } for post in posts]
 
         response = {'body': posts_data, 'message': f'All categories retrieved successfully', 'status': 'success', 'statusCode': 200}
