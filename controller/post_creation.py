@@ -41,7 +41,7 @@ def create_post():
             creator=user,
         )
         post.save()
-        return jsonify({'body': data,'message': 'Post created successfully','postid': str(post.id),'status':'success',
+        return jsonify({'body': data,'message': 'Post created successfully','postId': str(post.id),'status':'success',
                 'statusCode': 201}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
