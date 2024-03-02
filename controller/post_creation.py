@@ -1,76 +1,141 @@
 import re
 from flask import Blueprint, jsonify,request
 from model.signInsignup_model import User
+from mongoengine.queryset.visitor import Q
 from model.postCreation_model import   Comment, Dislike, Like, Post, Share 
-
+from mongoengine.errors import DoesNotExist
 postcreation=Blueprint('postcreation',__name__)
 
+
+# @postcreation.route('/v1/createpost', methods=['POST'])
+# def create_post():
+#     try:
+#         data = request.json
+#         user_id = request.headers.get('userId')     
+
+#         if not user_id:
+#             response = {'body': {},'message': 'UserID header is missing','status': 'error','statusCode': 400}
+#             return jsonify(response), 200   
+        
+#         user = User.objects(id=user_id).first()     
+
+#         if not user:
+#             response = {'body': {},'message': 'The user ID entered does not correspond to an active user','status': 'error','statusCode': 404}
+#             return jsonify(response), 200    
+
+#         title = data.get('title')
+#         # Regex to match titles with characters and single spaces between words
+#         if not re.match("^[A-Za-z]+( [A-Za-z]+)*$", title):
+#             return jsonify({'body': {}, 'message': 'Title must only contain letters and single spaces between words', 'status': 'error', 'statusCode': 400}), 200
+                      
+#         # Check if a post with the same title already exists
+#         existing_post = Post.objects(title=title).first()
+#         if existing_post:
+#             return jsonify({'body': {}, 'message': 'A post with this title already exists', 'status': 'error', 'statusCode': 400}), 200
+
+#         post = Post(
+#             title=data.get('title'),
+#             summary=data.get('summary'),
+#             post=data.get('post'),
+#             category=data.get('category'),
+#             subCategory=data.get('subCategory'),
+#             creator=user,
+#         )
+#         post.save()
+#         return jsonify({'body': data,'message': 'Post created successfully','postId': str(post.id),'status':'success',
+#                 'statusCode': 201}), 200
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 400
 
 @postcreation.route('/v1/createpost', methods=['POST'])
 def create_post():
     try:
         data = request.json
-        user_id = request.headers.get('userId')     
+        user_id = request.headers.get('userId')
 
         if not user_id:
-            response = {'body': {},'message': 'UserID header is missing','status': 'error','statusCode': 400}
-            return jsonify(response), 200   
-        
-        user = User.objects(id=user_id).first()     
+            response = {'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}
+            return jsonify(response), 200
+
+        user = User.objects(id=user_id).first()
 
         if not user:
-            response = {'body': {},'message': 'The user ID entered does not correspond to an active user','status': 'error','statusCode': 404}
-            return jsonify(response), 200    
+            response = {'body': {}, 'message': 'The user ID entered does not correspond to an active user', 'status': 'error', 'statusCode': 404}
+            return jsonify(response), 200
 
         title = data.get('title')
         # Regex to match titles with characters and single spaces between words
-        if not re.match("^[A-Za-z]+( [A-Za-z]+)*$", title):
-            return jsonify({'body': {}, 'message': 'Title must only contain letters and single spaces between words', 'status': 'error', 'statusCode': 400}), 200
-                      
+        if not re.match("^[A-Za-z0-9]+( [A-Za-z0-9]+)*$", title):
+            return jsonify({'body': {}, 'message': 'Title must only contain letters,numbers and single spaces between words', 'status': 'error', 'statusCode': 400}), 200
+
         # Check if a post with the same title already exists
         existing_post = Post.objects(title=title).first()
         if existing_post:
             return jsonify({'body': {}, 'message': 'A post with this title already exists', 'status': 'error', 'statusCode': 400}), 200
 
+        # Set default category and subCategory if they are None
+        category = data.get('category') if data.get('category') is not None else 'Default Category'
+        subCategory = data.get('subCategory') if data.get('subCategory') is not None else 'Default SubCategory'
+
         post = Post(
-            title=data.get('title'),
+            title=title,
             summary=data.get('summary'),
             post=data.get('post'),
-            category=data.get('category'),
-            subCategory=data.get('subCategory'),
+            category=category,
+            subCategory=subCategory,
             creator=user,
         )
         post.save()
-        return jsonify({'body': data,'message': 'Post created successfully','postId': str(post.id),'status':'success',
-                'statusCode': 201}), 200
+        return jsonify({'body': data, 'message': 'Post created successfully', 'postId': str(post.id), 'status': 'success', 'statusCode': 201}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
 
+
+# class JSONEncoder(json.JSONEncoder):
+#     ''' extend json-encoder class'''
+#     def default(self, o):
+#         if isinstance(o, ObjectId):
+#             return str(o)
+#         if isinstance(o, datetime):
+#             return str(o)
+    #         return json.JSONEncoder.default(self, o)
+
 @postcreation.route('/v1/posts/<post_id>', methods=['GET'])
 def view_post(post_id):
-    try:
-        post = Post.objects.get(id=post_id)
-        post_data = {
-            'title': post.title,
-            'summary': post.summary,
-            'post': post.post,
-            'category': post.category,
-            'subCategory': post.subCategory,
-            'likes': post.likes,  
-            'dislikes': post.dislikes,
-            'shares': post.shares,
- 
-        }
+        try:
+            post = Post.objects.get(id=post_id)
+            
+            # Fetch comments for the post
+            comments = Comment.objects(post=post).all()
+            comments_data = [{
+                'content': comment.content,
+                'authorName': comment.author.name if comment.author else "Anonymous",
+                # 'created_at': comment.created_at.isoformat() if comment.created_at else None
+            } for comment in comments]
+
+            post_data = {
+                'title': post.title,
+                'summary': post.summary,
+                'post': post.post,
+                'category': post.category,
+                'subCategory': post.subCategory,
+                'likes': post.likes,
+                'dislikes': post.dislikes,
+                'shares': post.shares,
+                'comments': comments_data,  # Add comments data here
+                # 'created_at': post.created_at.isoformat() if post.created_at else None
+            }
+            
+            response = {'body': post_data, 'message': 'Post retrieved successfully', 'status': 'success', 'statusCode': 200}
+            return jsonify(response), 200
         
-        response = {'body': post_data,'message': 'Post retrieved successfully','status': 'success','statusCode': 200}
-        return jsonify(response), 200
-    
-    except Post.DoesNotExist:
-        response = {'body': {},'message': 'Post not found','status': 'error','statusCode': 404}
-        return jsonify(response), 404
-
-
+        except DoesNotExist:
+            response = {'body': {}, 'message': 'Post not found', 'status': 'error', 'statusCode': 404}
+            return jsonify(response), 404
+        except Exception as e:
+            response = {'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}
+            return jsonify(response), 500
 
 # @postcreation.route('/v1/posts', methods=['GET'])
 # def get_user_posts():
@@ -138,11 +203,11 @@ def get_user_posts():
 
         # If category is specified, filter by category
         if category:
-            query = query.filter(category=category)
+            query = query.filter(Q(category__iexact=category))
 
         # If subCategory is specified, filter by subCategory
         if subCategory:
-            query = query.filter(subCategory=subCategory)
+            query = query.filter(Q(subCategory__iexact=subCategory))
 
         # Implement pagination
         paginated_posts, total_items = paginate_query(query, page, page_size)
@@ -426,7 +491,7 @@ def get_post_interactions(post_id):
 
 
 
-@postcreation.route('/v1/user/categories', methods=['GET'])
+@postcreation.route('/v1/user/category', methods=['GET'])
 def get_user_categories():
     user_id = request.headers.get('userId')
     
@@ -448,10 +513,10 @@ def get_user_categories():
 
 
 
-@postcreation.route('/v1/user/subcategories', methods=['GET'])
+@postcreation.route('/v1/user/subCategories', methods=['GET'])
 def get_user_subcategories():
     user_id = request.headers.get('userId')
-    category = request.args.get('category')  # Get category from query params
+    category = request.args.get('Categories')  # Get category from query params
     
     if not user_id:
         return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}), 400
@@ -465,9 +530,15 @@ def get_user_subcategories():
         return jsonify({'body': {}, 'message': 'User not found', 'status': 'error', 'statusCode': 404}), 404
     
     try:
-        subcategories = Post.objects(creator=user, category=category).distinct('subCategory')
+        # Use regex to make category search case-insensitive
+        # regex_category = re.compile('^{}$'.format(category), re.IGNORECASE)
+        # subcategories = Post.objects(creator=user, category=regex_category).distinct('subCategory')
+        
+
+        subcategories = Post.objects(creator=user, category__iexact=category).distinct('subCategory')
+        # If __iexact does not work, try the regex approach below:
         # Create an array of objects with each subCategory as a separate object
         subcategories_response = [{'subCategory': subCategory} for subCategory in subcategories]
-        return jsonify({'body': {'subcategories': subcategories_response}, 'message': 'Subcategories fetched successfully', 'status': 'success', 'statusCode': 200}), 200
+        return jsonify({'body': {'subCategories': subcategories_response}, 'message': 'Subcategories fetched successfully', 'status': 'success', 'statusCode': 200}), 200
     except Exception as e:
         return jsonify({'body': {}, 'message': 'An error occurred: ' + str(e), 'status': 'error', 'statusCode': 500}), 500
