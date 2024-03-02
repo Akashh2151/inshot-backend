@@ -5,7 +5,7 @@ from model.signInsignup_model import User
 member=Blueprint('member',__name__)
 
 
-@app.route('/v1/category', methods=['GET'])
+@member.route('/v1/category', methods=['GET'])
 def get_posts_by_user_categories():
     try:
         user_id = request.headers.get('userId')
