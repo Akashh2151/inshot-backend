@@ -6,7 +6,7 @@ member=Blueprint('member',__name__)
 
 
 
-@app.route('/v1/category', methods=['GET'])
+@member.route('/v1/category', methods=['GET'])
 def get_posts_by_user_categories():
     try:
         # Assuming you don't need user authentication for this endpoint
