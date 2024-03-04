@@ -95,7 +95,7 @@ def get_defcategories():
                 }), 404
         else:
             # Return all categories if no specific category is requested
-            categories_response = [{'category': category} for category in categories.keys()]
+            categories_response = [{'categories': category} for category in categories.keys()]
             return jsonify({
                 'status': 'success',
                 'statusCode': 200,
