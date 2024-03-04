@@ -7,6 +7,7 @@ from mongoengine.errors import DoesNotExist
 postcreation=Blueprint('postcreation',__name__)
 
 
+
 # @postcreation.route('/v1/createpost', methods=['POST'])
 # def create_post():
 #     try:
@@ -46,6 +47,60 @@ postcreation=Blueprint('postcreation',__name__)
 #                 'statusCode': 201}), 200
 #     except Exception as e:
 #         return jsonify({'error': str(e)}), 400
+
+
+# Example categories and subcategories structure
+categories = {
+    'Technology': ['Software', 'Hardware', 'AI & Machine Learning'],
+    'Health': ['Fitness', 'Nutrition', 'Mental Health'],
+    'Education': ['K-12', 'Higher Education', 'Online Learning'],
+    'Finance': ['Investing', 'Saving', 'Banking'],
+    'Entertainment': ['Movies', 'Music', 'Video Games'],
+    'Lifestyle': ['Travel', 'Fashion', 'Home Decor'],
+    'Science': ['Biology', 'Physics', 'Chemistry'],
+    'Sports': ['Football', 'Basketball', 'Tennis'],
+    'Art': ['Painting', 'Sculpture', 'Photography'],
+    'Food': ['Cooking', 'Baking', 'Restaurants']
+}
+
+@postcreation.route('/v1/categories', methods=['GET'])
+def get_defcategories():
+    try:
+        category_param = request.args.get('category')
+        
+        if category_param:
+            # Return subcategories for the given category if it exists
+            if category_param in categories:
+                subcategories_response = [{category_param: subcategory} for subcategory in categories[category_param]]
+                return jsonify({
+                    'status': 'success',
+                    'statusCode': 200,
+                    'message': 'Subcategories fetched successfully',
+                    'body': subcategories_response
+                }), 200
+            else:
+                return jsonify({
+                    'status': 'error',
+                    'statusCode': 404,
+                    'message': 'Category not found',
+                    'body': []
+                }), 200
+        else:
+            # Return all categories if no specific category is requested
+            categories_response = [{'category': category} for category in categories.keys()]
+            return jsonify({
+                'status': 'success',
+                'statusCode': 200,
+                'message': 'Categories fetched successfully',
+                'body': categories_response
+            }), 200
+    except Exception as e:
+            return jsonify({
+                'status': 'error',
+                'statusCode': 500,
+                'message': 'An error occurred: ' + str(e),
+                'body': []
+            }), 500
 
 @postcreation.route('/v1/createpost', methods=['POST'])
 def create_post():
@@ -92,14 +147,13 @@ def create_post():
 
 
 
-# class JSONEncoder(json.JSONEncoder):
-#     ''' extend json-encoder class'''
-#     def default(self, o):
-#         if isinstance(o, ObjectId):
-#             return str(o)
-#         if isinstance(o, datetime):
-#             return str(o)
-    #         return json.JSONEncoder.default(self, o)
+
+
+
+
+     
+
+
 
 @postcreation.route('/v1/posts/<post_id>', methods=['GET'])
 def view_post(post_id):
@@ -173,6 +227,7 @@ def view_post(post_id):
 #         return jsonify({'body': posts_data, 'message': 'User posts fetched successfully', 'status': 'success', 'statuscode': 200}), 200
 #     except Exception as e:
 #         return jsonify({'body': {}, 'message': 'An error occurred: ' + str(e), 'status': 'error', 'statuscode': 500}), 500
+
 
 
 def paginate_query(query, page, page_size):

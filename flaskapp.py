@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_jwt_extended import JWTManager
 from controller.signInsignUp import signUp_bp  
 from controller.signInsignUp import login_bp
@@ -59,7 +59,7 @@ CORS(app, origins=['http://localhost:3000', 'https://my-digital-ocean-app.com'])
 def hello_world():
       return jsonify({'message': 'hi All team'}), 200
  
-
+ 
 
 # main driver function
 if __name__ == '__main__':
