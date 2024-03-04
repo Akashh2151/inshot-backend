@@ -491,7 +491,7 @@ def get_post_interactions(post_id):
 
 
 
-@postcreation.route('/v1/user/category', methods=['GET'])
+@postcreation.route('/v1/user/categories', methods=['GET'])
 def get_user_categories():
     user_id = request.headers.get('userId')
     
