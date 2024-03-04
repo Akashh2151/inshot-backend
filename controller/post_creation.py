@@ -63,15 +63,23 @@ categories = {
     'Food': ['Cooking', 'Baking', 'Restaurants']
 }
 
+
+
 @postcreation.route('/v1/categories', methods=['GET'])
 def get_defcategories():
     try:
-        category_param = request.args.get('category')
+        category_param = request.args.get('categories')
         
         if category_param:
-            # Return subcategories for the given category if it exists
-            if category_param in categories:
-                subcategories_response = [{category_param: subcategory} for subcategory in categories[category_param]]
+            # Convert category_param to lowercase for case-insensitive comparison
+            category_param_lower = category_param.lower()
+            
+            # Find the category in categories with case-insensitive matching
+            matched_category = next((cat for cat in categories if cat.lower() == category_param_lower), None)
+            
+            if matched_category:
+                # Return subcategories for the matched category
+                subcategories_response = [{matched_category: subcategory} for subcategory in categories[matched_category]]
                 return jsonify({
                     'status': 'success',
                     'statusCode': 200,
@@ -84,7 +92,7 @@ def get_defcategories():
                     'statusCode': 404,
                     'message': 'Category not found',
                     'body': []
-                }), 200
+                }), 404
         else:
             # Return all categories if no specific category is requested
             categories_response = [{'category': category} for category in categories.keys()]
@@ -95,12 +103,15 @@ def get_defcategories():
                 'body': categories_response
             }), 200
     except Exception as e:
-            return jsonify({
-                'status': 'error',
-                'statusCode': 500,
-                'message': 'An error occurred: ' + str(e),
-                'body': []
-            }), 500
+        return jsonify({
+            'status': 'error',
+            'statusCode': 500,
+            'message': 'An error occurred: ' + str(e),
+            'body': []
+        }), 500
+
+
+
 
 @postcreation.route('/v1/createpost', methods=['POST'])
 def create_post():
