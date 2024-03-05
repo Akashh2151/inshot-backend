@@ -28,6 +28,7 @@ def validate_non_empty(value):
         # You can customize this part based on your requirements for numeric fields
         pass
 
+
 # Define the User model
 class User(Document):
     name = StringField(max_length=24)

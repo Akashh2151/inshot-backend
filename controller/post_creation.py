@@ -63,8 +63,6 @@ categories = {
     'Food': ['Cooking', 'Baking', 'Restaurants']
 }
 
-
-
 @postcreation.route('/v1/categories', methods=['GET'])
 def get_defcategories():
     try:
@@ -79,11 +77,12 @@ def get_defcategories():
             
             if matched_category:
                 # Return subcategories for the matched category
-                subcategories_response = [{matched_category: subcategory} for subcategory in categories[matched_category]]
+                subcategories_response = [{'subCategories': subcategory} for subcategory in categories[matched_category]]
                 return jsonify({
                     'status': 'success',
                     'statusCode': 200,
                     'message': 'Subcategories fetched successfully',
+                    'categories': matched_category,  # Add the matched category here
                     'body': subcategories_response
                 }), 200
             else:
@@ -94,7 +93,7 @@ def get_defcategories():
                     'body': []
                 }), 404
         else:
-            # Return all categories if no specific category is requested
+            # If no specific category is requested, return all categories as before
             categories_response = [{'categories': category} for category in categories.keys()]
             return jsonify({
                 'status': 'success',
@@ -109,7 +108,6 @@ def get_defcategories():
             'message': 'An error occurred: ' + str(e),
             'body': []
         }), 500
-
 
 
 

@@ -58,9 +58,12 @@ CORS(app, origins=['http://localhost:3000', 'https://my-digital-ocean-app.com'])
 @app.route('/')
 def hello_world():
       return jsonify({'message': 'hi All team'}), 200
+
+
+
  
  
 
 # main driver function
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
