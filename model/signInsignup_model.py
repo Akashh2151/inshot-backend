@@ -31,7 +31,7 @@ def validate_non_empty(value):
 
 # Define the User model
 class User(Document):
-    name = StringField(max_length=24)
+    name = StringField(max_length=50)
     mobile = StringField(required=True, max_length=10, unique=True)  # Unique mobile field
     email = EmailField(unique=True, required=True)  # Unique email field
     password = StringField(required=True, max_length=100)
