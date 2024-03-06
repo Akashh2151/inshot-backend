@@ -56,7 +56,7 @@ def paginate_query(query, page, page_size):
     total_items = query.count()
     return posts, total_items
 
-@app.route('/v1/Allposts', methods=['GET'])
+@member.route('/v1/Allposts', methods=['GET'])
 def get_Allposts():
     try:
         categories = request.args.get('categories', default=None)
