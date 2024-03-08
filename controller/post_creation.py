@@ -250,8 +250,8 @@ def get_user_posts():
     user_id = request.headers.get('userId')
     page = request.args.get('page', default=1, type=int)
     page_size = request.args.get('pageSize', default=10, type=int)
-    category = request.args.get('category', default=None)
-    subCategory = request.args.get('subCategory', default=None)
+    category = request.args.get('categories', default=None)
+    subCategory = request.args.get('subCategories', default=None)
 
     if not user_id:
         return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}), 400
