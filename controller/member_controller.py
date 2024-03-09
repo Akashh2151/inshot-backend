@@ -60,19 +60,21 @@ def get_Allposts():
     try:
         categories = request.args.get('categories', default=None)
         subCategories = request.args.get('subCategory', default=None)
-        print("categories,subCategories",categories,subCategories)
+    
         page = int(request.args.get('page', default=1, type=int))  # Default page is 1
         pageSize = int(request.args.get('pageSize', default=10, type=int))  # Default page size is 10
 
-        # Query posts based on category and subcategory
-        if categories and subCategories:
-            posts = Post.objects.filter(category=categories, subCategory=subCategories)
-        elif categories:
-            posts = Post.objects.filter(category=categories)
-        elif subCategories:
-            posts = Post.objects.filter(subCategory=subCategories)
+        # Query all posts if no category or subcategory is provided
+        if not categories and not subCategories:
+            posts = Post.objects.all()
         else:
-            return jsonify({'message': 'Please provide either category or subCategories parameter', 'status': 'error', 'statusCode': 400}), 400
+            # Query posts based on category and subcategory
+            if categories and subCategories:
+                posts = Post.objects.filter(category=categories, subCategory=subCategories)
+            elif categories:
+                posts = Post.objects.filter(category=categories)
+            elif subCategories:
+                posts = Post.objects.filter(subCategory=subCategories)
 
         # Perform pagination
         paginated_posts, total_items = paginate_query(posts, page, pageSize)
