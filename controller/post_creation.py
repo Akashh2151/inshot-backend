@@ -1,9 +1,12 @@
 import re
+from bson import ObjectId
+# from mongoengine import *
 from flask import Blueprint, jsonify,request
 from model.signInsignup_model import User
 from mongoengine.queryset.visitor import Q
-from model.postCreation_model import   Comment, Dislike, Like, Post, Share 
+from model.postCreation_model import   CategoryMapping, Comment, Dislike, Like, Post, Share 
 from mongoengine.errors import DoesNotExist
+from datetime import datetime
 postcreation=Blueprint('postcreation',__name__)
 
 
@@ -150,6 +153,7 @@ def create_post():
             creator=user,
         )
         post.save()
+      
         return jsonify({'body': data, 'message': 'Post created successfully', 'postId': str(post.id), 'status': 'success', 'statusCode': 201}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
@@ -163,11 +167,15 @@ def create_post():
      
 
 
+# _________________________________________________________________________________
 
 @postcreation.route('/v1/posts/<post_id>', methods=['GET'])
 def view_post(post_id):
         try:
             post = Post.objects.get(id=post_id)
+
+            # Increment view count
+            post.update(inc__viewCount=1)
             
             # Fetch comments for the post
             comments = Comment.objects(post=post).all()
@@ -199,6 +207,175 @@ def view_post(post_id):
         except Exception as e:
             response = {'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}
             return jsonify(response), 500
+    
+
+# @postcreation.route('/v1/posts/<post_id>', methods=['GET'])
+# def view_post(post_id):
+#     try:
+#         post = Post.objects.get(id=post_id)
+#         # Fetch comments for the post
+#         comments = Comment.objects(post=post).all()
+#         comments_data = [{
+#             'content': comment.content,
+#             'authorName': comment.author.name if comment.author else "Anonymous",
+#         } for comment in comments]
+        
+
+
+#         related_subcategories = Post.objects(category=post.category, id__ne=post_id).distinct('subCategory')
+
+#         # If you have more subcategories than you need, you might want to limit them to a certain number
+#         related_subcategories = related_subcategories[:5] if len(related_subcategories) > 5 else related_subcategories
+
+        
+#         post_data = {
+#             'userName': post.creator.name if post.creator else "Unknown",
+#             'createdAt': post.created_at,
+#             'title': post.title,
+#             'summary': post.summary,
+#             'post': post.post,
+#             'category': post.category,
+#             'subCategory': post.subCategory,
+#             'likes': post.likes,
+#             'dislikes': post.dislikes,
+#             'shares': post.shares,
+#             'comment': post.comment,
+#             'comments': comments_data,
+#             'relatedCategories': related_subcategories,  # Add related categories here
+#         }
+        
+#         response = {'body': post_data, 'message': 'Post retrieved successfully', 'status': 'success', 'statusCode': 200}
+#         return jsonify(response), 200
+#     except DoesNotExist:
+#         response = {'body': {}, 'message': 'Post not found', 'status': 'error', 'statusCode': 404}
+#         return jsonify(response), 404
+#     except Exception as e:
+#         response = {'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}
+#         return jsonify(response), 500
+    
+
+#recent post
+@postcreation.route('/v1/user/posts/recent', methods=['GET'])
+def get_recent_posts():
+    user_id = request.headers.get('userId')  # Get user ID from request header
+    if not user_id:
+        return jsonify({"message": "UserID header is missing", "status": "error", "statusCode": 400}), 400
+
+    try:
+        user = User.objects.get(id=user_id)  # Fetch the user by ID
+        # Fetch the 4 most recent posts by this user, sorted by created_at in descending order
+        recent_posts = Post.objects(creator=user).order_by('-created_at').limit(4)
+
+        posts_data = []
+        for post in recent_posts:
+            posts_data.append({
+                "title": post.title,
+                "summary": post.summary,
+                "post": post.post,
+                "category": post.category,
+                "subCategory": post.subCategory,
+                "likes": post.likes,
+                "dislikes": post.dislikes,
+                "shares": post.shares,
+                "comment": post.comment,
+                "createdAt": post.created_at.isoformat()  # Format datetime for JSON serialization
+            })
+
+        response = {
+            "message": "Recent posts retrieved successfully",
+            "posts": posts_data,
+            "status": "success",
+            "statusCode": 200
+        }
+        return jsonify(response), 200
+
+    except User.DoesNotExist:
+        return jsonify({"message": "User not found", "status": "error", "statusCode": 404}), 404
+    except Exception as e:
+        return jsonify({"message": str(e), "status": "error", "statusCode": 500}), 500
+
+
+#recomended post
+@postcreation.route('/v1/posts/recommended', methods=['GET'])
+def get_recommended_posts():
+    page = int(request.args.get('page', 1))  # Default to first page if not specified
+    pagesize = int(request.args.get('pageSize', 10))  # Default to 10 items per page if not specified
+    postid = request.args.get('postId')
+    
+    if not postid:
+        return jsonify({"message": "postId parameter is missing", "status": "error", "statusCode": 400}), 400
+
+    try:
+        # Find the post by postid to get its category
+        main_post = Post.objects.get(id=postid)
+        main_post_category = main_post.category
+        
+        # Find recommended posts in the same category, excluding the main post itself
+        recommended_posts_query = Post.objects(
+            category=main_post_category, 
+            id__ne=postid
+        ).order_by('-created_at')
+        
+        # Implement pagination
+        recommended_posts = recommended_posts_query.skip((page - 1) * pagesize).limit(pagesize)
+
+        posts_data = [{
+            "title": post.title,
+            "summary": post.summary,
+            "post": post.post,
+            "category": post.category,
+            "subCategory": post.subCategory,
+            "likes": post.likes,
+            "dislikes": post.dislikes,
+            "shares": post.shares,
+            "comment": post.comment,
+            "created_at": post.created_at.isoformat() if post.created_at else None
+        } for post in recommended_posts]
+
+        response = {
+            "message": "Recommended posts retrieved successfully",
+            "posts": posts_data,
+            "status": "success",
+            "statusCode": 200
+        }
+        return jsonify(response), 200
+
+    except Post.DoesNotExist:
+        return jsonify({"message": "Post not found", "status": "error", "statusCode": 404}), 404
+    except Exception as e:
+        return jsonify({"message": str(e), "status": "error", "statusCode": 500}), 500
+
+
+@postcreation.route('/v1/deletepost', methods=['DELETE'])
+def delete_post():
+    try:
+        user_id = request.headers.get('userId')
+        post_id = request.args.get('postId')  # Assuming the post ID is passed as a query parameter
+
+        if not user_id:
+            response = {'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}
+            return jsonify(response), 200
+
+        user = User.objects(id=user_id).first()
+
+        if not user:
+            response = {'body': {},'message': 'The user ID entered does not correspond to an active user','status': 'error','statusCode': 404}
+            return jsonify(response), 200
+
+        post = Post.objects(id=post_id).first()
+        if not post:
+            return jsonify({'body': {},'message': 'Post not found','status': 'error','statusCode': 404}), 200
+        # print(str(post.creator.id ))
+        # print(user_id)
+       
+        if str(post.creator.id) != str(user_id):
+          return jsonify({'body': {},'message': 'User is not the creator of the post','status': 'error','statusCode': 403}), 200
+       
+        post.delete()
+        return jsonify({'body': {},'message': 'Post deleted successfully','status': 'success','statusCode': 200}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+    
 
 # @postcreation.route('/v1/posts', methods=['GET'])
 # def get_user_posts():
@@ -237,7 +414,12 @@ def view_post(post_id):
 #     except Exception as e:
 #         return jsonify({'body': {}, 'message': 'An error occurred: ' + str(e), 'status': 'error', 'statuscode': 500}), 500
 
-
+# @postcreation.route('/postdelete',methods=['DELETE'])
+# def deletepost(userid):
+#     try:
+#         data=request.headers.get('userod')
+#     except Exception as e:
+#         return jsonify({'message':str(e)})
 
 def paginate_query(query, page, page_size):
     skip = (page - 1) * page_size
@@ -248,6 +430,14 @@ def paginate_query(query, page, page_size):
 @postcreation.route('/v1/posts', methods=['GET'])
 def get_user_posts():
     user_id = request.headers.get('userId')
+
+    # Define allowed query parameters
+    allowed_keys = {'page', 'pageSize', 'categories', 'subCategories'}
+    # Check for any unexpected query parameters
+    if any(key not in allowed_keys for key in request.args.keys()):
+        return jsonify({'body': {}, 'message': 'Invalid query detected. Only specific parameters are permitted', 'status': 'error', 'statusCode': 400}), 200
+
+
     page = request.args.get('page', default=1, type=int)
     page_size = request.args.get('pageSize', default=10, type=int)
     category = request.args.get('categories', default=None)
@@ -276,7 +466,7 @@ def get_user_posts():
         # Implement pagination
         paginated_posts, total_items = paginate_query(query, page, page_size)
         posts_data = [{
-            'id': str(post.id),
+            # 'id': str(post.id),
             'title': post.title,
             'summary': post.summary,
             'post': post.post,
@@ -285,6 +475,7 @@ def get_user_posts():
             'likes': post.likes,
             'dislikes': post.dislikes,
             'shares': post.shares,
+            'comment':post.comment
         } for post in paginated_posts]
 
         total_pages = (total_items + page_size - 1) // page_size
@@ -301,14 +492,6 @@ def get_user_posts():
         }), 200
     except Exception as e:
         return jsonify({'body': {}, 'message': 'An error occurred: ' + str(e), 'status': 'error', 'statusCode': 500}), 500
-
-
-
-
-
-
-
-
 
 
 

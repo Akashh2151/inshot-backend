@@ -1,7 +1,8 @@
 # from mongoengine import Document, StringField, ReferenceField, ListField, DateTimeField, IntField
+
 import datetime
-from mongoengine import Document, StringField, ReferenceField,DateTimeField,IntField
-from wtforms import DateTimeField
+from mongoengine import Document, StringField, ReferenceField,DateTimeField,IntField,ListField
+# from wtforms import DateTimeField
 from model.signInsignup_model import User
 # class User(Document):
 #     name = StringField(required=True, max_length=120)
@@ -20,7 +21,12 @@ class Post(Document):
     dislikes = IntField(default=0)
     shares = IntField(default=0)
     comment = IntField(default=0)
+    viewCount = IntField(default=0)
     created_at = DateTimeField(default=datetime.datetime.utcnow)
+
+class CategoryMapping(Document):
+    main_category = StringField(required=True)
+    related_categories = ListField(StringField(required=True))
 
  
 class Comment(Document):

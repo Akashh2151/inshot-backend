@@ -4,6 +4,9 @@ from model.postCreation_model import Post
 from model.signInsignup_model import User
 member=Blueprint('member',__name__)
 
+
+
+
 @member.route('/v1/categories', methods=['GET'])
 def get_posts_by_user_categories():
     try:
@@ -22,10 +25,18 @@ def get_posts_by_user_categories():
     except Exception as e:
         return jsonify({'error': str(e), 'status': 'error', 'statusCode': 500}), 500
 
+
 @member.route('/v1/subCategories', methods=['GET'])
 def get_posts_by_subCategories():
     try:
-        category = request.args.get('category')
+        category = request.args.get('category', default=None)
+        category = request.args.get('string', default='', type=str)
+         # Check if the string is in uppercase
+        is_upper = category.isupper()
+
+        # Check if the string is in lowercase
+        is_lower = category.islower()
+       
        
 
         # Query posts by subcategory
@@ -46,6 +57,8 @@ def get_posts_by_subCategories():
         return jsonify(response), 200
     except Exception as e:
         return jsonify({'error': str(e), 'status': 'error', 'statusCode': 500}), 500
+    
+
 
 
 # Function for pagination
@@ -63,6 +76,14 @@ def get_Allposts():
     
         page = int(request.args.get('page', default=1, type=int))  # Default page is 1
         pageSize = int(request.args.get('pageSize', default=10, type=int))  # Default page size is 10
+        categories = request.args.get('string', default='', type=str)
+
+        # Check if the string is in uppercase
+        is_upper = categories.isupper()
+
+        # Check if the string is in lowercase
+        is_lower = categories.islower()
+       
 
         # Query all posts if no category or subcategory is provided
         if not categories and not subCategories:
@@ -103,8 +124,48 @@ def get_Allposts():
             'totalPosts': total_items,
             'message': f'User Posts fetched successfully ',
             'status': 'success',
-            'statusCode': 200
+            'statusCode': 200,
+            # 'input_string': input_string,
+            # 'is_uppercase': is_upper,
+            # 'is_lowercase': is_lower
         }
         return jsonify(response), 200
     except Exception as e:
         return jsonify({'error': str(e), 'status': 'error', 'statusCode': 500}), 500
+
+    
+
+
+
+#likes,shares,comment,dislike
+@member.route('/v1/manage-post-data/<post_id>', methods=['PUT'])
+def like_post(post_id):
+    try:
+        data = request.json
+        operation=data.get('operation')
+        post = Post.objects(id=post_id).first()
+        if operation=="like":
+        
+            if post:
+                post.likes += 1
+                post.save()
+                return jsonify({'message': 'Post liked successfully.'})
+            
+        elif operation=="dislike":
+        
+            if post:
+                post.dislikes += 1
+                post.save()
+                return jsonify({'message': 'Post disliked successfully.'})
+            
+        elif operation=="share":
+        
+            if post:
+                post.shares += 1
+                post.save()
+                return jsonify({'message': 'Post shared successfully.'})
+        else:
+            return jsonify({'error': 'Post not found.'}), 404
+    
+    except Exception as e:
+        return jsonify({'error':str(e)})
