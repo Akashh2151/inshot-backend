@@ -194,6 +194,8 @@ def view_post(post_id):
                 'likes': post.likes,
                 'dislikes': post.dislikes,
                 'shares': post.shares,
+                'comment': post.comment,
+                'viewCount':post.viewCount,
                 'comments': comments_data,  # Add comments data here
                 # 'created_at': post.created_at.isoformat() if post.created_at else None
             }
@@ -278,6 +280,7 @@ def get_recent_posts():
                 "dislikes": post.dislikes,
                 "shares": post.shares,
                 "comment": post.comment,
+                'viewCount':post.viewCount,
                 "createdAt": post.created_at.isoformat()  # Format datetime for JSON serialization
             })
 
@@ -329,6 +332,7 @@ def get_recommended_posts():
             "dislikes": post.dislikes,
             "shares": post.shares,
             "comment": post.comment,
+            'viewCount':post.viewCount,
             "created_at": post.created_at.isoformat() if post.created_at else None
         } for post in recommended_posts]
 
@@ -475,7 +479,8 @@ def get_user_posts():
             'likes': post.likes,
             'dislikes': post.dislikes,
             'shares': post.shares,
-            'comment':post.comment
+            'comment':post.comment,
+            'viewCount':post.viewCount
         } for post in paginated_posts]
 
         total_pages = (total_items + page_size - 1) // page_size
