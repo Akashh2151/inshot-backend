@@ -669,10 +669,10 @@ def handle_post_action(post_id):
         user = User.objects.get(id=user_id)
         post = Post.objects.get(id=post_id)
     except (Post.DoesNotExist, User.DoesNotExist):
-        return jsonify({'message': 'Post or User not found', 'status': 'error', 'statusCode': 404}), 404
+        return jsonify({'body':{},'message': 'Post or User not found', 'status': 'error', 'statusCode': 404}), 404
 
     if action not in ['like', 'dislike', 'share']:
-        return jsonify({'message': 'Invalid action', 'status': 'error', 'statusCode': 400}), 400
+        return jsonify({'body':{},'message': 'Invalid action', 'status': 'error', 'statusCode': 400}), 400
 
     try:
         if action == 'like' or action == 'dislike':
@@ -681,7 +681,7 @@ def handle_post_action(post_id):
             opposite_model = Dislike if action == 'like' else Like
             existing_reaction = model.objects(post=post, user=user).first()
             if existing_reaction:
-                return jsonify({'message': f'User already {action}d this post', 'status': 'error', 'statusCode': 400}), 400
+                return jsonify({'body':{},'message': f'User already {action}d this post', 'status': 'error', 'statusCode': 400}), 400
 
             # Check if the opposite reaction exists and remove it
             existing_opposite_reaction = opposite_model.objects(post=post, user=user).first()
