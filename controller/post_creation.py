@@ -236,6 +236,7 @@ def view_post(post_id):
             'title': post.title,
             'summary': post.summary,
             'post': post.post,
+            'postId': str(post.id),
             'category': post.category,
             'subCategory': post.subCategory,
             'likes': post.likes,
