@@ -564,96 +564,152 @@ def get_user_posts():
 #     except Post.DoesNotExist:
 #         return jsonify({'body': {}, 'message': 'Post not found', 'status': 'error', 'statuscode': 404}), 404
 
+# __________________
+# # like dislike share
+# @postcreation.route('/v1/posts/<post_id>/like', methods=['POST'])
+# def like_post(post_id):
+#     try:
+#         user_id = request.headers.get('userId')
+#         if not user_id:
+#             return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}), 200
+
+#         user = User.objects.get(id=user_id)
+#         post = Post.objects.get(id=post_id)
+
+#         # Check if the user has already liked this post
+#         existing_like = Like.objects(post=post, user=user).first()
+#         if existing_like:
+#             return jsonify({'body': {}, 'message': 'User already liked this post', 'status': 'error', 'statusCode': 400}), 200
+
+#         # Check if a dislike exists and remove it if so
+#         existing_dislike = Dislike.objects(post=post, user=user).first()
+#         if existing_dislike:
+#             existing_dislike.delete()
+#             post.update(dec__dislikes=1)
+
+#         like = Like(post=post, user=user)
+#         like.save()
+#         post.update(inc__likes=1)
+#         post.reload()
+#         return jsonify({'body': {}, 'message': 'Like added successfully', 'status': 'success', 'statusCode': 201}), 201
+#     except (Post.DoesNotExist, User.DoesNotExist):
+#         return jsonify({'body': {}, 'message': 'Post or User not found', 'status': 'error', 'statusCode': 404}), 404
+#     except Exception as e:
+#         return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}), 500
 
 
-@postcreation.route('/v1/posts/<post_id>/like', methods=['POST'])
-def like_post(post_id):
+# @postcreation.route('/v1/posts/<post_id>/dislike', methods=['POST'])
+# def dislike_post(post_id):
+#     try:
+#         user_id = request.headers.get('userId')
+#         if not user_id:
+#             return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}), 200
+
+#         user = User.objects.get(id=user_id)
+#         post = Post.objects.get(id=post_id)
+
+#         # Check if the user has already disliked this post
+#         existing_dislike = Dislike.objects(post=post, user=user).first()
+#         if existing_dislike:
+#             return jsonify({'body': {}, 'message': 'User already disliked this post', 'status': 'error', 'statusCode': 400}), 200
+
+#         # Check if a like exists and remove it if so
+#         existing_like = Like.objects(post=post, user=user).first()
+#         if existing_like:
+#             existing_like.delete()
+#             post.update(dec__likes=1)
+
+#         dislike = Dislike(post=post, user=user)
+#         dislike.save()
+#         post.update(inc__dislikes=1)
+#         post.reload()
+#         return jsonify({'body': {}, 'message': 'Dislike added successfully', 'status': 'success', 'statusCode': 201}), 201
+#     except (Post.DoesNotExist, User.DoesNotExist):
+#         return jsonify({'body': {}, 'message': 'Post or User not found', 'status': 'error', 'statusCode': 404}), 404
+#     except Exception as e:
+#         return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}), 500
+
+
+
+
+
+# @postcreation.route('/v1/posts/<post_id>/share', methods=['POST'])
+# def share_post(post_id):
+#     try:
+#         # user_id = request.headers.get('userId')
+#         # if not user_id:
+#         #     return jsonify({'body': {}, 'message': 'userId header is missing', 'status': 'error', 'statusCode': 400}), 400
+
+#         # user = User.objects.get(id=user_id)
+#         post = Post.objects.get(id=post_id)
+
+#         # Optionally, you could check for excessive sharing in a short period and limit it here
+
+#         share = Share(post=post)
+#         share.save()
+#         post.update(inc__shares=1)
+#         post.reload()
+#         return jsonify({'body': {}, 'message': 'Post shared successfully', 'status': 'success', 'statusCode': 201}), 201
+#     except (Post.DoesNotExist, User.DoesNotExist):
+#         return jsonify({'body': {}, 'message': 'Post or User not found', 'status': 'error', 'statusCode': 404}), 404
+#     except Exception as e:
+#         return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}), 500
+
+
+
+@postcreation.route('/v1/posts/<post_id>/action', methods=['PUT'])
+def handle_post_action(post_id):
+    user_id = request.headers.get('userId')
+    action = request.args.get('action')  # Expected to be one of 'like', 'dislike', 'share'
+    
+    if not user_id:
+        return jsonify({'body':{},'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}), 400
+
     try:
-        user_id = request.headers.get('userId')
-        if not user_id:
-            return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}), 200
-
         user = User.objects.get(id=user_id)
         post = Post.objects.get(id=post_id)
-
-        # Check if the user has already liked this post
-        existing_like = Like.objects(post=post, user=user).first()
-        if existing_like:
-            return jsonify({'body': {}, 'message': 'User already liked this post', 'status': 'error', 'statusCode': 400}), 200
-
-        # Check if a dislike exists and remove it if so
-        existing_dislike = Dislike.objects(post=post, user=user).first()
-        if existing_dislike:
-            existing_dislike.delete()
-            post.update(dec__dislikes=1)
-
-        like = Like(post=post, user=user)
-        like.save()
-        post.update(inc__likes=1)
-        post.reload()
-        return jsonify({'body': {}, 'message': 'Like added successfully', 'status': 'success', 'statusCode': 201}), 201
     except (Post.DoesNotExist, User.DoesNotExist):
-        return jsonify({'body': {}, 'message': 'Post or User not found', 'status': 'error', 'statusCode': 404}), 404
-    except Exception as e:
-        return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}), 500
+        return jsonify({'message': 'Post or User not found', 'status': 'error', 'statusCode': 404}), 404
 
+    if action not in ['like', 'dislike', 'share']:
+        return jsonify({'message': 'Invalid action', 'status': 'error', 'statusCode': 400}), 400
 
-@postcreation.route('/v1/posts/<post_id>/dislike', methods=['POST'])
-def dislike_post(post_id):
     try:
-        user_id = request.headers.get('userId')
-        if not user_id:
-            return jsonify({'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}), 200
+        if action == 'like' or action == 'dislike':
+            # Process like or dislike
+            model = Like if action == 'like' else Dislike
+            opposite_model = Dislike if action == 'like' else Like
+            existing_reaction = model.objects(post=post, user=user).first()
+            if existing_reaction:
+                return jsonify({'message': f'User already {action}d this post', 'status': 'error', 'statusCode': 400}), 400
 
-        user = User.objects.get(id=user_id)
-        post = Post.objects.get(id=post_id)
+            # Check if the opposite reaction exists and remove it
+            existing_opposite_reaction = opposite_model.objects(post=post, user=user).first()
+            if existing_opposite_reaction:
+                existing_opposite_reaction.delete()
+                post.update(**{'dec__likes' if action == 'dislike' else 'dec__dislikes': 1})
 
-        # Check if the user has already disliked this post
-        existing_dislike = Dislike.objects(post=post, user=user).first()
-        if existing_dislike:
-            return jsonify({'body': {}, 'message': 'User already disliked this post', 'status': 'error', 'statusCode': 400}), 200
+            # Add the new like or dislike
+            reaction = model(post=post, user=user)
+            reaction.save()
+            post.update(**{'inc__likes' if action == 'like' else 'inc__dislikes': 1})
 
-        # Check if a like exists and remove it if so
-        existing_like = Like.objects(post=post, user=user).first()
-        if existing_like:
-            existing_like.delete()
-            post.update(dec__likes=1)
+        elif action == 'share':
+            # Process share
+            share = Share(post=post)
+            share.save()
+            post.update(inc__shares=1)
 
-        dislike = Dislike(post=post, user=user)
-        dislike.save()
-        post.update(inc__dislikes=1)
         post.reload()
-        return jsonify({'body': {}, 'message': 'Dislike added successfully', 'status': 'success', 'statusCode': 201}), 201
-    except (Post.DoesNotExist, User.DoesNotExist):
-        return jsonify({'body': {}, 'message': 'Post or User not found', 'status': 'error', 'statusCode': 404}), 404
+        return jsonify({'message': f'Post {action}d successfully', 'status': 'success', 'statusCode': 201}), 201
+
     except Exception as e:
-        return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}), 500
+        return jsonify({'message': str(e), 'status': 'error', 'statusCode': 500}), 500
 
 
 
 
 
-@postcreation.route('/v1/posts/<post_id>/share', methods=['POST'])
-def share_post(post_id):
-    try:
-        # user_id = request.headers.get('userId')
-        # if not user_id:
-        #     return jsonify({'body': {}, 'message': 'userId header is missing', 'status': 'error', 'statusCode': 400}), 400
-
-        # user = User.objects.get(id=user_id)
-        post = Post.objects.get(id=post_id)
-
-        # Optionally, you could check for excessive sharing in a short period and limit it here
-
-        share = Share(post=post)
-        share.save()
-        post.update(inc__shares=1)
-        post.reload()
-        return jsonify({'body': {}, 'message': 'Post shared successfully', 'status': 'success', 'statusCode': 201}), 201
-    except (Post.DoesNotExist, User.DoesNotExist):
-        return jsonify({'body': {}, 'message': 'Post or User not found', 'status': 'error', 'statusCode': 404}), 404
-    except Exception as e:
-        return jsonify({'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}), 500
 
 
 @postcreation.route('/v1/posts/<post_id>/comment', methods=['POST'])
