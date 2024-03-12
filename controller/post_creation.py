@@ -169,47 +169,92 @@ def create_post():
 
 # _________________________________________________________________________________
 
-@postcreation.route('/v1/posts/<post_id>', methods=['GET'])
-def view_post(post_id):
-        try:
-            post = Post.objects.get(id=post_id)
+#@postcreation.route('/v1/posts/<post_id>', methods=['GET'])
+#def view_post(post_id):
+#        try:
+ #           post = Post.objects.get(id=post_id)
 
             # Increment view count
-            post.update(inc__viewCount=1)
+ #           post.update(inc__viewCount=1)
             
             # Fetch comments for the post
-            comments = Comment.objects(post=post).all()
-            comments_data = [{
-                'content': comment.content,
-                'authorName': comment.author.name if comment.author else "Anonymous",
+   #         comments = Comment.objects(post=post).all()
+     #       comments_data = [{
+    #            'content': comment.content,
+     #           'authorName': comment.author.name if comment.author else "Anonymous",
                 # 'created_at': comment.created_at.isoformat() if comment.created_at else None
-            } for comment in comments]
+     #       } for comment in comments]
 
-            post_data = {
-                'title': post.title,
-                'summary': post.summary,
-                'post': post.post,
-                'category': post.category,
-                'subCategory': post.subCategory,
-                'likes': post.likes,
-                'dislikes': post.dislikes,
-                'shares': post.shares,
-                'comment': post.comment,
-                'viewCount':post.viewCount,
-                'comments': comments_data,  # Add comments data here
+   #         post_data = {
+   #             'title': post.title,
+    #            'summary': post.summary,
+     #           'post': post.post,
+     #           'category': post.category,
+   #             'subCategory': post.subCategory,
+   #             'likes': post.likes,
+   #             'dislikes': post.dislikes,
+   #             'shares': post.shares,
+    #            'comment': post.comment,
+ #               'viewCount':post.viewCount,
+  #              'comments': comments_data,  # Add comments data here
                 # 'created_at': post.created_at.isoformat() if post.created_at else None
-            }
+#            }
             
-            response = {'body': post_data, 'message': 'Post retrieved successfully', 'status': 'success', 'statusCode': 200}
-            return jsonify(response), 200
+     #       response = {'body': post_data, 'message': 'Post retrieved successfully', 'status': 'success', 'statusCode': 200}
+  #          return jsonify(response), 200
         
-        except DoesNotExist:
-            response = {'body': {}, 'message': 'Post not found', 'status': 'error', 'statusCode': 404}
-            return jsonify(response), 404
-        except Exception as e:
-            response = {'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}
-            return jsonify(response), 500
+ #       except DoesNotExist:
+ #           response = {'body': {}, 'message': 'Post not found', 'status': 'error', 'statusCode': 404}
+  #          return jsonify(response), 404
+ #       except Exception as e:
+#            response = {'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}
+  #          return jsonify(response), 500
     
+@postcreation.route('/v1/posts/<post_id>', methods=['GET'])
+ def view_post(post_id):
+     try:
+         post = Post.objects.get(id=post_id)
+         # Fetch comments for the post
+         comments = Comment.objects(post=post).all()
+         comments_data = [{
+             'content': comment.content,
+             'authorName': comment.author.name if comment.author else "Anonymous",
+         } for comment in comments]
+        
+
+
+         related_subcategories = Post.objects(category=post.category, id__ne=post_id).distinct('subCategory')
+
+        # If you have more subcategories than you need, you might want to limit them to a certain number
+         related_subcategories = related_subcategories[:5] if len(related_subcategories) > 5 else related_subcategories
+
+        
+         post_data = {
+             'userName': post.creator.name if post.creator else "Unknown",
+             'createdAt': post.created_at,
+             'title': post.title,
+             'summary': post.summary,
+             'post': post.post,
+             'category': post.category,
+             'subCategory': post.subCategory,
+             'likes': post.likes,
+             'dislikes': post.dislikes,
+             'shares': post.shares,
+             'comment': post.comment,
+             'viewCount':post.viewCount
+             'comments': comments_data,
+             'relatedCategories': related_subcategories,  # Add related categories here
+         }
+        
+       response = {'body': post_data, 'message': 'Post retrieved successfully', 'status': 'success', 'statusCode': 200}
+        return jsonify(response), 200
+     except DoesNotExist:
+        response = {'body': {}, 'message': 'Post not found', 'status': 'error', 'statusCode': 404}
+         return jsonify(response), 404
+     except Exception as e:
+         response = {'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}
+         return jsonify(response), 500
+
 
 # @postcreation.route('/v1/posts/<post_id>', methods=['GET'])
 # def view_post(post_id):
