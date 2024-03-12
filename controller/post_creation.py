@@ -210,7 +210,7 @@ def create_post():
 #             response = {'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}
 #             return jsonify(response), 500
     
-
+# single post
 @postcreation.route('/v1/posts/<post_id>', methods=['GET'])
 def view_post(post_id):
     try:
