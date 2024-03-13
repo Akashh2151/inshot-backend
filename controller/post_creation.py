@@ -258,17 +258,69 @@ def view_post(post_id):
         return jsonify(response), 500
     
 
-#recent post
+# #recent post
+# @postcreation.route('/v1/user/posts/recent', methods=['GET'])
+# def get_recent_posts():
+#     user_id = request.headers.get('userId')  # Get user ID from request header
+#     if not user_id:
+#         return jsonify({"message": "UserID header is missing", "status": "error", "statusCode": 400}), 400
+
+#     try:
+#         user = User.objects.get(id=user_id)  # Fetch the user by ID
+#         # Fetch the 4 most recent posts by this user, sorted by created_at in descending order
+#         recent_posts = Post.objects(creator=user).order_by('-created_at').limit(4)
+
+#         posts_data = []
+#         for post in recent_posts:
+#             posts_data.append({
+#                 "title": post.title,
+#                 "summary": post.summary,
+#                 "post": post.post,
+#                 'postId': str(post.id),
+#                 "category": post.category,
+#                 "subCategory": post.subCategory,
+#                 "likes": post.likes,
+#                 "dislikes": post.dislikes,
+#                 "shares": post.shares,
+#                 "comment": post.comment,
+#                 'viewCount':post.viewCount,
+#                 "createdAt": post.created_at.isoformat()  # Format datetime for JSON serialization
+#             })
+
+#         response = {
+#             "message": "Recent posts retrieved successfully",
+#             "posts": posts_data,
+#             "status": "success",
+#             "statusCode": 200
+#         }
+#         return jsonify(response), 200
+
+#     except User.DoesNotExist:
+#         return jsonify({"message": "User not found", "status": "error", "statusCode": 404}), 404
+#     except Exception as e:
+#         return jsonify({"message": str(e), "status": "error", "statusCode": 500}), 500
+    
+
 @postcreation.route('/v1/user/posts/recent', methods=['GET'])
 def get_recent_posts():
-    user_id = request.headers.get('userId')  # Get user ID from request header
-    if not user_id:
-        return jsonify({"message": "UserID header is missing", "status": "error", "statusCode": 400}), 400
+    # Retrieve query parameters
+    page = int(request.args.get('page', 1))  # Default to first page if not provided
+    pageSize = int(request.args.get('pageSize', 4))  # Default size of 4 if not provided
+    post_id = request.args.get('postId')  # Required postId parameter
+
+
+    if not post_id:
+        return jsonify({"message": "PostID parameter is missing", "status": "error", "statusCode": 400}), 400
 
     try:
-        user = User.objects.get(id=user_id)  # Fetch the user by ID
-        # Fetch the 4 most recent posts by this user, sorted by created_at in descending order
-        recent_posts = Post.objects(creator=user).order_by('-created_at').limit(4)
+        post = Post.objects.get(id=post_id)  # Fetch the post by ID
+        user = post.creator  # Fetch the user who created the post
+
+        # Calculate skips for pagination
+        skip = (page - 1) * pageSize
+
+        # Fetch the pageSize most recent posts by this user, excluding the current post, sorted by created_at in descending order
+        recent_posts = Post.objects(creator=user, id__ne=post_id).order_by('-created_at').skip(skip).limit(pageSize)
 
         posts_data = []
         for post in recent_posts:
@@ -283,7 +335,7 @@ def get_recent_posts():
                 "dislikes": post.dislikes,
                 "shares": post.shares,
                 "comment": post.comment,
-                'viewCount':post.viewCount,
+                'viewCount': post.viewCount,
                 "createdAt": post.created_at.isoformat()  # Format datetime for JSON serialization
             })
 
@@ -295,11 +347,11 @@ def get_recent_posts():
         }
         return jsonify(response), 200
 
-    except User.DoesNotExist:
-        return jsonify({"message": "User not found", "status": "error", "statusCode": 404}), 404
+    except Post.DoesNotExist:
+        return jsonify({"message": "Post not found", "status": "error", "statusCode": 404}), 404
     except Exception as e:
         return jsonify({"message": str(e), "status": "error", "statusCode": 500}), 500
-
+    
 
 #recomended post
 @postcreation.route('/v1/posts/recommended', methods=['GET'])

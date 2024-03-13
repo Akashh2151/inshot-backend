@@ -29,19 +29,9 @@ def get_posts_by_user_categories():
 @member.route('/v1/subCategories', methods=['GET'])
 def get_posts_by_subCategories():
     try:
-        category = request.args.get('category', default=None)
-        category = request.args.get('string', default='', type=str)
-         # Check if the string is in uppercase
-        is_upper = category.isupper()
-
-        # Check if the string is in lowercase
-        is_lower = category.islower()
-       
-       
-
-        # Query posts by subcategory
-        # posts = Post.objects.filter(category=category)
-        posts = Post.objects.filter(category=category)
+        categories = request.args.get('categories', default=None)
+        
+        posts = Post.objects.filter(category__iexact=categories)
     
         # Serialize posts data
         posts_data = []
@@ -53,12 +43,11 @@ def get_posts_by_subCategories():
             posts_data.append(post_dict)
          
 
-        response = {'body': posts_data,'categories':category, 'message': f'subCategories fetched successfully', 'status': 'success', 'statusCode': 200}
+        response = {'body': posts_data,'categories':categories, 'message': f'subCategories fetched successfully', 'status': 'success', 'statusCode': 200}
         return jsonify(response), 200
     except Exception as e:
         return jsonify({'error': str(e), 'status': 'error', 'statusCode': 500}), 500
     
-
 
 
 # Function for pagination
@@ -76,26 +65,20 @@ def get_Allposts():
     
         page = int(request.args.get('page', default=1, type=int))  # Default page is 1
         pageSize = int(request.args.get('pageSize', default=10, type=int))  # Default page size is 10
-        categories = request.args.get('string', default='', type=str)
-
-        # Check if the string is in uppercase
-        is_upper = categories.isupper()
-
-        # Check if the string is in lowercase
-        is_lower = categories.islower()
-       
+        
 
         # Query all posts if no category or subcategory is provided
         if not categories and not subCategories:
-            posts = Post.objects.all()
+            posts = Post.objects()
+           
         else:
             # Query posts based on category and subcategory
             if categories and subCategories:
-                posts = Post.objects.filter(category=categories, subCategory=subCategories)
+                posts = Post.objects.filter(category_iexact=categories, subCategory_iexact=subCategories)
             elif categories:
-                posts = Post.objects.filter(category=categories)
+                posts = Post.objects.filter(category__iexact=categories)
             elif subCategories:
-                posts = Post.objects.filter(subCategory=subCategories)
+                posts = Post.objects.filter(subCategory__iexact=subCategories)
 
         # Perform pagination
         paginated_posts, total_items = paginate_query(posts, page, pageSize)
@@ -104,11 +87,16 @@ def get_Allposts():
         posts_data = []
         for post in paginated_posts:
             post_dict = {
+                '_id': str(post.id),
                 'title': post.title,
                 'summary': post.summary,
                 'post': post.post,
                 'categories': post.category,
                 'subCategories': post.subCategory,
+                'likes':post.likes,
+                'dislikes':post.dislikes,
+                'shares':post.shares,
+                'viewcount':post.viewcount
                 # 'creator': post.creator.name  # Assuming creator has a username field
             }
             posts_data.append(post_dict)
@@ -132,9 +120,6 @@ def get_Allposts():
         return jsonify(response), 200
     except Exception as e:
         return jsonify({'error': str(e), 'status': 'error', 'statusCode': 500}), 500
-
-    
-
 
 
 #likes,shares,comment,dislike
