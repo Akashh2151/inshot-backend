@@ -300,7 +300,7 @@ def view_post(post_id):
 #     except Exception as e:
 #         return jsonify({"message": str(e), "status": "error", "statusCode": 500}), 500
     
-
+# recentpost
 @postcreation.route('/v1/user/posts/recent', methods=['GET'])
 def get_recent_posts():
     # Retrieve query parameters
