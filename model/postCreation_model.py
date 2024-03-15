@@ -15,7 +15,7 @@ class Post(Document):
     summary = StringField(required=True)
     post = StringField(required=True)  
     category = StringField(required=True)
-    subCategory=StringField(required=True)
+    subCategory = ListField(StringField(), required=True)
     creator = ReferenceField(User, reverse_delete_rule=2)  
     likes = IntField(default=0)
     dislikes = IntField(default=0)

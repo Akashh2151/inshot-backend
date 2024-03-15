@@ -11,6 +11,44 @@ postcreation=Blueprint('postcreation',__name__)
 
 
 
+@postcreation.route('/v1/post/getcategories', methods=['GET'])
+def get_categoriesall():
+    try:
+        # Fetch all posts
+        posts = Post.objects().all()
+
+        # Transform posts to include categories and subcategories in the response
+        response_data = []
+        for post in posts:
+            response_data.append({
+                "title": post.title,
+                "category": post.category,
+                "subCategory": post.subCategory if post.subCategory else [],  # Directly using subCategory as it's already a list
+                "type": "post"
+            })
+
+        # Preparing the final response
+        final_response = {
+            'body': response_data,
+            'message': 'Categories retrieved successfully',
+            'status': 'success',
+            'statusCode': 200
+        }
+
+        return jsonify(final_response), 200
+    except Exception as e:
+        return jsonify({
+            'body': {},
+            'message': f'An error occurred: {str(e)}',
+            'status': 'error',
+            'statusCode': 500
+        }), 500
+
+
+
+
+
+
 # @postcreation.route('/v1/createpost', methods=['POST'])
 # def create_post():
 #     try:
@@ -112,59 +150,6 @@ def get_defcategories():
             'body': []
         }), 500
 
-
-
-@postcreation.route('/v1/createpost', methods=['POST'])
-def create_post():
-    try:
-        data = request.json
-        user_id = request.headers.get('userId')
-
-        if not user_id:
-            response = {'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}
-            return jsonify(response), 200
-
-        user = User.objects(id=user_id).first()
-
-        if not user:
-            response = {'body': {}, 'message': 'The user ID entered does not correspond to an active user', 'status': 'error', 'statusCode': 404}
-            return jsonify(response), 200
-
-        title = data.get('title')
-        # Regex to match titles with characters and single spaces between words
-        # if not re.match("^[A-Za-z0-9]+( [A-Za-z0-9]+)*$", title):
-        #     return jsonify({'body': {}, 'message': 'Title must only contain letters,numbers and single spaces between words', 'status': 'error', 'statusCode': 400}), 200
-
-        # Check if a post with the same title already exists
-        existing_post = Post.objects(title=title).first()
-        if existing_post:
-            return jsonify({'body': {}, 'message': 'A post with this title already exists', 'status': 'error', 'statusCode': 400}), 200
-
-        # Set default category and subCategory if they are None
-        category = data.get('category') if data.get('category') is not None else 'Default Category'
-        subCategory = data.get('subCategory') if data.get('subCategory') is not None else 'Default SubCategory'
-
-        post = Post(
-            title=title,
-            summary=data.get('summary'),
-            post=data.get('post'),
-            category=category,
-            subCategory=subCategory,
-            creator=user,
-        )
-        post.save()
-      
-        return jsonify({'body': data, 'message': 'Post created successfully', 'postId': str(post.id), 'status': 'success', 'statusCode': 201}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
-
-
-
-
-
-
-
-     
 
 
 # _________________________________________________________________________________

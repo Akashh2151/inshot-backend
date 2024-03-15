@@ -276,20 +276,20 @@ def get_posts():
 #         return jsonify({'body':{},'message': str(e), 'status': 'error', 'statusCode': 500}), 500
 
 
-@member.route('/v1/post/<post_id>/action', methods=['POST'])  # Consider using POST
+@member.route('/v1/post/<post_id>/action', methods=['PUT'])  # Consider using POST
 def like_post(post_id):
     try:
         operation = request.args.get('action')
         
         # Ensure operation is provided
         if not operation:
-            return jsonify({'error': 'No operation provided.'}), 400
+            return jsonify({'body':{},'message': 'No operation provided','status': 'error', 'statusCode': 400}), 200
 
         post = Post.objects(id=post_id).first()
 
         # Ensure post exists
         if not post:
-            return jsonify({'error': 'Post not found.'}), 404
+            return jsonify({'body':{},'message': 'Post not found','status': 'error', 'statusCode': 404}), 200
 
         # Perform the action
         if operation == "like":
@@ -300,15 +300,15 @@ def like_post(post_id):
             post.shares += 1
         else:
             # Operation not supported
-            return jsonify({'error': 'Operation not supported.'}), 400
+            return jsonify({'body':{},'message': 'Operation not supported','status': 'error', 'statusCode': 400}), 200
 
         post.save()
-        return jsonify({'message': f'Post {operation} successfully.'})
+        return jsonify({'body':{},'message': f'Post {operation} successfully','status': 'success','statusCode': 200}),200
 
     except Exception as e:
         # Logging the exception can be helpful for debugging
         # logger.error(f"Error in like_post: {str(e)}")
-        return jsonify({'error': 'An error occurred, please try again later.'}), 500
+        return jsonify({'body':{},"message":str(e),'status':'error','statusCode': 500}), 500
     
 
 
