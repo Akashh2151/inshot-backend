@@ -29,7 +29,8 @@ app.register_blueprint(member)
 # app.register_blueprint(master)
 # app.register_blueprint(billing)
 # app.register_blueprint(reports)
- 
+
+app.config['VALID_API_KEY'] = '9f8b47de-5c1a-4a6b-8d92-d67c43f7a6c4'
 
 
 # Configure the JWT token location

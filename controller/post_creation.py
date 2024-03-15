@@ -132,8 +132,8 @@ def create_post():
 
         title = data.get('title')
         # Regex to match titles with characters and single spaces between words
-        if not re.match("^[A-Za-z0-9]+( [A-Za-z0-9]+)*$", title):
-            return jsonify({'body': {}, 'message': 'Title must only contain letters,numbers and single spaces between words', 'status': 'error', 'statusCode': 400}), 200
+        # if not re.match("^[A-Za-z0-9]+( [A-Za-z0-9]+)*$", title):
+        #     return jsonify({'body': {}, 'message': 'Title must only contain letters,numbers and single spaces between words', 'status': 'error', 'statusCode': 400}), 200
 
         # Check if a post with the same title already exists
         existing_post = Post.objects(title=title).first()

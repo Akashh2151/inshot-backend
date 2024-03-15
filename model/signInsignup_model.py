@@ -40,7 +40,7 @@ class User(Document):
     # businessEmail = EmailField(unique=True, required=True)  # Unique businessEmail field
     # businessAddress = StringField(max_length=100)
     businessType = StringField(max_length=100)
-    confirmPassword=StringField(required=True, max_length=100)
+    # confirmPassword=StringField(required=True, max_length=100)
     # bundle = ListField(DynamicField())
     profilePic = StringField(required=False, null=True)
     userType = StringField(required=False, null=True)
