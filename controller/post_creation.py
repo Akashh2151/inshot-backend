@@ -9,35 +9,77 @@ from mongoengine.errors import DoesNotExist
 from datetime import datetime
 postcreation=Blueprint('postcreation',__name__)
 
-#create Post
+# #create Post
+# @postcreation.route('/v1/createpost', methods=['POST'])
+# def create_post():
+#     try:
+#         data = request.json
+#         user_id = request.headers.get('userId')     
+
+#         if not user_id:
+#             response = {'body': {},'message': 'UserID header is missing','status': 'error','statusCode': 400}
+#             return jsonify(response), 200   
+        
+#         user = User.objects(id=user_id).first()     
+
+#         if not user:
+#             response = {'body': {},'message': 'The user ID entered does not correspond to an active user','status': 'error','statusCode': 404}
+#             return jsonify(response), 200    
+
+#         title = data.get('title')
+#         # # Regex to match titles with characters and single spaces between words
+#         # if not re.match("^[A-Za-z]+( [A-Za-z]+)*$", title):
+#         #     return jsonify({'body': {}, 'message': 'Title must only contain letters and single spaces between words', 'status': 'error', 'statusCode': 400}), 200
+                      
+#         # Check if a post with the same title already exists
+#         existing_post = Post.objects(title=title).first()
+#         if existing_post:
+#             return jsonify({'body': {}, 'message': 'A post with this title already exists', 'status': 'error', 'statusCode': 400}), 200
+
+#         post = Post(
+#             title=data.get('title'),
+#             summary=data.get('summary'),
+#             post=data.get('post'),
+#             category=data.get('category'),
+#             subCategory=data.get('subCategory'),
+#             creator=user,
+#         )
+#         post.save()
+#         return jsonify({'body': data,'message': 'Post created successfully','postId': str(post.id),'status':'success',
+#                 'statusCode': 201}), 200
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 400
+
 @postcreation.route('/v1/createpost', methods=['POST'])
 def create_post():
     try:
         data = request.json
-        user_id = request.headers.get('userId')     
+        user_id = request.headers.get('userId')
 
         if not user_id:
-            response = {'body': {},'message': 'UserID header is missing','status': 'error','statusCode': 400}
-            return jsonify(response), 200   
-        
-        user = User.objects(id=user_id).first()     
+            response = {'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}
+            return jsonify(response), 200
+
+        user = User.objects(id=user_id).first()
 
         if not user:
-            response = {'body': {},'message': 'The user ID entered does not correspond to an active user','status': 'error','statusCode': 404}
-            return jsonify(response), 200    
+            response = {'body': {}, 'message': 'The user ID entered does not correspond to an active user', 'status': 'error', 'statusCode': 404}
+            return jsonify(response), 200
 
-        title = data.get('title')
-        # # Regex to match titles with characters and single spaces between words
-        # if not re.match("^[A-Za-z]+( [A-Za-z]+)*$", title):
-        #     return jsonify({'body': {}, 'message': 'Title must only contain letters and single spaces between words', 'status': 'error', 'statusCode': 400}), 200
-                      
-        # Check if a post with the same title already exists
-        existing_post = Post.objects(title=title).first()
+        original_title = data.get('title')
+        if not original_title:
+            return jsonify({'body': {}, 'message': 'Title is required', 'status': 'error', 'statusCode': 400}), 200
+
+        # Transform title to have dashes between words and convert to lowercase
+        transformed_title = re.sub(r'\s+', '-', original_title.strip()).lower()
+
+        # Check if a post with the same transformed title already exists
+        existing_post = Post.objects(title=transformed_title).first()
         if existing_post:
             return jsonify({'body': {}, 'message': 'A post with this title already exists', 'status': 'error', 'statusCode': 400}), 200
 
         post = Post(
-            title=data.get('title'),
+            title=transformed_title,  # Use the transformed, lowercased title here
             summary=data.get('summary'),
             post=data.get('post'),
             category=data.get('category'),
@@ -45,10 +87,79 @@ def create_post():
             creator=user,
         )
         post.save()
-        return jsonify({'body': data,'message': 'Post created successfully','postId': str(post.id),'status':'success',
-                'statusCode': 201}), 200
+        return jsonify({'body': data, 'message': 'Post created successfully', 'postId': str(post.id), 'status': 'success', 'statusCode': 201}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+    
+
+
+@postcreation.route('/v1/searchposts', methods=['GET'])
+def search_posts():
+    try:
+        # Retrieve search parameters from the request's query parameters
+        title_query = request.args.get('title', '')
+        summary_query = request.args.get('summary', '')
+        category_query = request.args.get('category', '')
+        subcategory_query = request.args.getlist('subcategory')  # This can be a list
+
+        # Pagination parameters
+        page = int(request.args.get('page', 1))
+        pageSize = int(request.args.get('pageSize', 10))
+
+        # Build the query
+        query = {
+            '$and': [
+                {'title': {'$regex': title_query, '$options': 'i'}} if title_query else {},
+                {'summary': {'$regex': summary_query, '$options': 'i'}} if summary_query else {},
+                {'category': category_query} if category_query else {},
+                {'subCategory': {'$in': subcategory_query}} if subcategory_query else {},
+            ]
+        }
+
+        # Remove empty conditions
+        query['$and'] = [condition for condition in query['$and'] if condition]
+
+        # If no conditions are provided, match all documents
+        if not query['$and']:
+            query = {}
+
+        # Fetch posts with pagination
+        posts = Post.objects(__raw__=query).skip((page - 1) * pageSize).limit(pageSize)
+
+        # Prepare the response data
+        posts_data = [{
+            "title": post.title,
+            "summary": post.summary,
+            "post": post.post,
+            'postId': str(post.id),
+            "category": post.category,
+            "subCategory": post.subCategory,
+            "likes": post.likes,
+            "dislikes": post.dislikes,
+            "shares": post.shares,
+            "comment": post.comment,
+            'viewCount': post.viewCount,
+            "createdAt": post.created_at.isoformat()
+        } for post in posts]
+
+        # Construct the response object
+        response = {
+            'body': posts_data,
+            'message': 'Posts fetched successfully' if posts_data else 'No posts found matching the criteria',
+            'status': 'success',
+            'statusCode': 200
+        }
+        return jsonify(response), 200
+    except Exception as e:
+        return jsonify({
+            'body': {},
+            'message': f'An error occurred: {str(e)}',
+            'status': 'error',
+            'statusCode': 400
+        }), 400
+    
+
+
 
 
 
@@ -275,7 +386,7 @@ def view_post(post_id):
 def get_recent_posts():
     # Retrieve query parameters
     page = int(request.args.get('page', 1))  # Default to first page if not provided
-    pageSize = int(request.args.get('pageSize', 4))  # Default size of 4 if not provided
+    pageSize = int(request.args.get('pageSize', 10))  # Default size of 4 if not provided
 
     try:
         # Calculate skips for pagination
@@ -355,7 +466,7 @@ def get_recommended_posts():
             "shares": post.shares,
             "comment": post.comment,
             'viewCount': post.viewCount,
-            "created_at": post.created_at.isoformat() if post.created_at else None
+            "createdAt": post.created_at.isoformat() if post.created_at else None
         } for post in recommended_posts]
 
         response = {

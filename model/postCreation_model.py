@@ -23,6 +23,7 @@ class Post(Document):
     comment = IntField(default=0)
     viewCount = IntField(default=0)
     created_at = DateTimeField(default=datetime.datetime.utcnow)
+    
 
 class CategoryMapping(Document):
     main_category = StringField(required=True)
