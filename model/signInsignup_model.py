@@ -17,7 +17,7 @@ app = Flask(__name__)
 # }
 
 # db = MongoEngine(app)
-connect(db='authservice', host='mongodb+srv://akash1:ziYpzvP0QHPnuCws@cluster0.sl3hsc9.mongodb.net/authservice?retryWrites=true&w=majority')
+connect(db='Eelma-v1', host='mongodb+srv://akash1:ziYpzvP0QHPnuCws@cluster0.sl3hsc9.mongodb.net/authservice?retryWrites=true&w=majority')
 
 
 def validate_non_empty(value):
