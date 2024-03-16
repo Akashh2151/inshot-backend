@@ -9,85 +9,48 @@ from mongoengine.errors import DoesNotExist
 from datetime import datetime
 postcreation=Blueprint('postcreation',__name__)
 
-
-
-@postcreation.route('/v1/post/getcategories', methods=['GET'])
-def get_categoriesall():
+#create Post
+@postcreation.route('/v1/createpost', methods=['POST'])
+def create_post():
     try:
-        # Fetch all posts
-        posts = Post.objects().all()
+        data = request.json
+        user_id = request.headers.get('userId')     
 
-        # Transform posts to include categories and subcategories in the response
-        response_data = []
-        for post in posts:
-            response_data.append({
-                "title": post.title,
-                "category": post.category,
-                "subCategory": post.subCategory if post.subCategory else [],  # Directly using subCategory as it's already a list
-                "type": "post"
-            })
-
-        # Preparing the final response
-        final_response = {
-            'body': response_data,
-            'message': 'Categories retrieved successfully',
-            'status': 'success',
-            'statusCode': 200
-        }
-
-        return jsonify(final_response), 200
-    except Exception as e:
-        return jsonify({
-            'body': {},
-            'message': f'An error occurred: {str(e)}',
-            'status': 'error',
-            'statusCode': 500
-        }), 500
-
-
-
-
-
-
-# @postcreation.route('/v1/createpost', methods=['POST'])
-# def create_post():
-#     try:
-#         data = request.json
-#         user_id = request.headers.get('userId')     
-
-#         if not user_id:
-#             response = {'body': {},'message': 'UserID header is missing','status': 'error','statusCode': 400}
-#             return jsonify(response), 200   
+        if not user_id:
+            response = {'body': {},'message': 'UserID header is missing','status': 'error','statusCode': 400}
+            return jsonify(response), 200   
         
-#         user = User.objects(id=user_id).first()     
+        user = User.objects(id=user_id).first()     
 
-#         if not user:
-#             response = {'body': {},'message': 'The user ID entered does not correspond to an active user','status': 'error','statusCode': 404}
-#             return jsonify(response), 200    
+        if not user:
+            response = {'body': {},'message': 'The user ID entered does not correspond to an active user','status': 'error','statusCode': 404}
+            return jsonify(response), 200    
 
-#         title = data.get('title')
-#         # Regex to match titles with characters and single spaces between words
-#         if not re.match("^[A-Za-z]+( [A-Za-z]+)*$", title):
-#             return jsonify({'body': {}, 'message': 'Title must only contain letters and single spaces between words', 'status': 'error', 'statusCode': 400}), 200
+        title = data.get('title')
+        # # Regex to match titles with characters and single spaces between words
+        # if not re.match("^[A-Za-z]+( [A-Za-z]+)*$", title):
+        #     return jsonify({'body': {}, 'message': 'Title must only contain letters and single spaces between words', 'status': 'error', 'statusCode': 400}), 200
                       
-#         # Check if a post with the same title already exists
-#         existing_post = Post.objects(title=title).first()
-#         if existing_post:
-#             return jsonify({'body': {}, 'message': 'A post with this title already exists', 'status': 'error', 'statusCode': 400}), 200
+        # Check if a post with the same title already exists
+        existing_post = Post.objects(title=title).first()
+        if existing_post:
+            return jsonify({'body': {}, 'message': 'A post with this title already exists', 'status': 'error', 'statusCode': 400}), 200
 
-#         post = Post(
-#             title=data.get('title'),
-#             summary=data.get('summary'),
-#             post=data.get('post'),
-#             category=data.get('category'),
-#             subCategory=data.get('subCategory'),
-#             creator=user,
-#         )
-#         post.save()
-#         return jsonify({'body': data,'message': 'Post created successfully','postId': str(post.id),'status':'success',
-#                 'statusCode': 201}), 200
-#     except Exception as e:
-#         return jsonify({'error': str(e)}), 400
+        post = Post(
+            title=data.get('title'),
+            summary=data.get('summary'),
+            post=data.get('post'),
+            category=data.get('category'),
+            subCategory=data.get('subCategory'),
+            creator=user,
+        )
+        post.save()
+        return jsonify({'body': data,'message': 'Post created successfully','postId': str(post.id),'status':'success',
+                'statusCode': 201}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
 
 
 # Example categories and subcategories structure
@@ -103,7 +66,7 @@ categories = {
     'Art': ['Painting', 'Sculpture', 'Photography'],
     'Food': ['Cooking', 'Baking', 'Restaurants']
 }
-
+# get defaultcategory
 @postcreation.route('/v1/categories', methods=['GET'])
 def get_defcategories():
     try:
@@ -151,6 +114,8 @@ def get_defcategories():
         }), 500
 
  
+
+
 # single post
 @postcreation.route('/v1/posts/<post_id>', methods=['GET'])
 def view_post(post_id):
@@ -198,29 +163,126 @@ def view_post(post_id):
         response = {'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}
         return jsonify(response), 500
     
-# ____________________________________________________________________________________________  
- 
-# # recentpost
+
+# # # recentpost
+# @postcreation.route('/v1/user/posts/recent', methods=['GET'])
+# def get_recent_posts():
+#     # Retrieve query parameters
+#     page = int(request.args.get('page', 1))  # Default to first page if not provided
+#     pageSize = int(request.args.get('pageSize', 4))  # Default size of 4 if not provided
+#     post_id = request.args.get('postId')  # Required postId parameter
+
+
+#     if not post_id:
+#         return jsonify({"message": "PostID parameter is missing", "status": "error", "statusCode": 400}), 400
+
+#     try:
+#         post = Post.objects.get(id=post_id)  # Fetch the post by ID
+#         user = post.creator  # Fetch the user who created the post
+
+#         # Calculate skips for pagination
+#         skip = (page - 1) * pageSize
+
+#         # Fetch the pageSize most recent posts by this user, excluding the current post, sorted by created_at in descending order
+#         recent_posts = Post.objects(creator=user, id__ne=post_id).order_by('-created_at').skip(skip).limit(pageSize)
+
+#         posts_data = []
+#         for post in recent_posts:
+#             posts_data.append({
+#                 "title": post.title,
+#                 "summary": post.summary,
+#                 "post": post.post,
+#                 'postId': str(post.id),
+#                 "category": post.category,
+#                 "subCategory": post.subCategory,
+#                 "likes": post.likes,
+#                 "dislikes": post.dislikes,
+#                 "shares": post.shares,
+#                 "comment": post.comment,
+#                 'viewCount': post.viewCount,
+#                 "createdAt": post.created_at.isoformat()  # Format datetime for JSON serialization
+#             })
+
+#         response = {
+#             "message": "Recent posts retrieved successfully",
+#             "posts": posts_data,
+#             "status": "success",
+#             "statusCode": 200
+#         }
+#         return jsonify(response), 200
+
+#     except Post.DoesNotExist:
+#         return jsonify({"message": "Post not found", "status": "error", "statusCode": 404}), 404
+#     except Exception as e:
+#         return jsonify({"message": str(e), "status": "error", "statusCode": 500}), 500
+    
+# #  ___
+
+# # #recomended post
+# @postcreation.route('/v1/posts/recommended', methods=['GET'])
+# def get_recommended_posts():
+#     page = int(request.args.get('page', 1))  # Default to first page if not specified
+#     pagesize = int(request.args.get('pageSize', 10))  # Default to 10 items per page if not specified
+#     postid = request.args.get('postId')
+    
+#     if not postid:
+#         return jsonify({"message": "postId parameter is missing", "status": "error", "statusCode": 400}), 400
+
+#     try:
+#         # Find the post by postid to get its category
+#         main_post = Post.objects.get(id=postid)
+#         main_post_category = main_post.category
+        
+#         # Find recommended posts in the same category, excluding the main post itself
+#         recommended_posts_query = Post.objects(
+#             category=main_post_category, 
+#             id__ne=postid
+#         ).order_by('-created_at')
+        
+#         # Implement pagination
+#         recommended_posts = recommended_posts_query.skip((page - 1) * pagesize).limit(pagesize)
+
+#         posts_data = [{
+#             "title": post.title,
+#             "summary": post.summary,
+#             "post": post.post,
+#             "category": post.category,
+#             "subCategory": post.subCategory,
+#             'postId': str(post.id),
+#             "likes": post.likes,
+#             "dislikes": post.dislikes,
+#             "shares": post.shares,
+#             "comment": post.comment,
+#             'viewCount':post.viewCount,
+#             "created_at": post.created_at.isoformat() if post.created_at else None
+#         } for post in recommended_posts]
+
+#         response = {
+#             "message": "Recommended posts retrieved successfully",
+#             "posts": posts_data,
+#             "status": "success",
+#             "statusCode": 200
+#         }
+#         return jsonify(response), 200
+
+#     except Post.DoesNotExist:
+#         return jsonify({"message": "Post not found", "status": "error", "statusCode": 404}), 404
+#     except Exception as e:
+#         return jsonify({"message": str(e), "status": "error", "statusCode": 500}), 500
+
+
 @postcreation.route('/v1/user/posts/recent', methods=['GET'])
 def get_recent_posts():
     # Retrieve query parameters
     page = int(request.args.get('page', 1))  # Default to first page if not provided
     pageSize = int(request.args.get('pageSize', 4))  # Default size of 4 if not provided
-    post_id = request.args.get('postId')  # Required postId parameter
-
-
-    if not post_id:
-        return jsonify({"message": "PostID parameter is missing", "status": "error", "statusCode": 400}), 400
 
     try:
-        post = Post.objects.get(id=post_id)  # Fetch the post by ID
-        user = post.creator  # Fetch the user who created the post
-
         # Calculate skips for pagination
         skip = (page - 1) * pageSize
 
-        # Fetch the pageSize most recent posts by this user, excluding the current post, sorted by created_at in descending order
-        recent_posts = Post.objects(creator=user, id__ne=post_id).order_by('-created_at').skip(skip).limit(pageSize)
+        # Fetch the pageSize most recent posts globally, sorted by created_at in descending order
+        recent_posts = Post.objects.order_by('-created_at').skip(skip).limit(pageSize)
 
         posts_data = []
         for post in recent_posts:
@@ -247,33 +309,36 @@ def get_recent_posts():
         }
         return jsonify(response), 200
 
-    except Post.DoesNotExist:
-        return jsonify({"message": "Post not found", "status": "error", "statusCode": 404}), 404
     except Exception as e:
         return jsonify({"message": str(e), "status": "error", "statusCode": 500}), 500
-    
-#  ___
 
-# #recomended post
+
+
+
 @postcreation.route('/v1/posts/recommended', methods=['GET'])
 def get_recommended_posts():
     page = int(request.args.get('page', 1))  # Default to first page if not specified
     pagesize = int(request.args.get('pageSize', 10))  # Default to 10 items per page if not specified
-    postid = request.args.get('postId')
-    
-    if not postid:
-        return jsonify({"message": "postId parameter is missing", "status": "error", "statusCode": 400}), 400
+    category = request.args.get('category')
+    subCategory = request.args.get('subCategory')
+
+    # Initialize the query without any filters
+    recommended_posts_query = Post.objects()
+
+    # Apply category filter if category is provided
+    if category:
+        recommended_posts_query = recommended_posts_query.filter(category=category)
+
+    # Apply subCategory filter if subCategory is provided
+    if subCategory:
+        recommended_posts_query = recommended_posts_query.filter(subCategory=subCategory)
+
+    # If neither category nor subCategory is provided, return an error
+    if not category and not subCategory:
+        return jsonify({"message": "Either category or subCategory parameter must be provided", "status": "error", "statusCode": 400}), 400
 
     try:
-        # Find the post by postid to get its category
-        main_post = Post.objects.get(id=postid)
-        main_post_category = main_post.category
-        
-        # Find recommended posts in the same category, excluding the main post itself
-        recommended_posts_query = Post.objects(
-            category=main_post_category, 
-            id__ne=postid
-        ).order_by('-created_at')
+        recommended_posts_query = recommended_posts_query.order_by('-created_at')
         
         # Implement pagination
         recommended_posts = recommended_posts_query.skip((page - 1) * pagesize).limit(pagesize)
@@ -289,25 +354,60 @@ def get_recommended_posts():
             "dislikes": post.dislikes,
             "shares": post.shares,
             "comment": post.comment,
-            'viewCount':post.viewCount,
+            'viewCount': post.viewCount,
             "created_at": post.created_at.isoformat() if post.created_at else None
         } for post in recommended_posts]
 
         response = {
-            "message": "Recommended posts retrieved successfully",
+            "message": "Recommended posts retrieved successfully based on provided criteria",
             "posts": posts_data,
             "status": "success",
             "statusCode": 200
         }
         return jsonify(response), 200
 
-    except Post.DoesNotExist:
-        return jsonify({"message": "Post not found", "status": "error", "statusCode": 404}), 404
     except Exception as e:
         return jsonify({"message": str(e), "status": "error", "statusCode": 500}), 500
 
 
 
+#get all categorys and subcategorys
+@postcreation.route('/v1/post/getcategories', methods=['GET'])
+def get_categoriesall():
+    try:
+        # Fetch all posts
+        posts = Post.objects().all()
+
+        # Transform posts to include categories and subcategories in the response
+        response_data = []
+        for post in posts:
+            response_data.append({
+                "title": post.title,
+                "category": post.category,
+                "subCategory": post.subCategory if post.subCategory else [],  # Directly using subCategory as it's already a list
+                "type": "post"
+            })
+
+        # Preparing the final response
+        final_response = {
+            'body': response_data,
+            'message': 'Categories retrieved successfully',
+            'status': 'success',
+            'statusCode': 200
+        }
+
+        return jsonify(final_response), 200
+    except Exception as e:
+        return jsonify({
+            'body': {},
+            'message': f'An error occurred: {str(e)}',
+            'status': 'error',
+            'statusCode': 500
+        }), 500
+
+
+
+#delete post
 @postcreation.route('/v1/deletepost', methods=['DELETE'])
 def delete_post():
     try:
@@ -340,6 +440,7 @@ def delete_post():
     
  
 
+# user get all post
 def paginate_query(query, page, page_size):
     skip = (page - 1) * page_size
     posts = query.skip(skip).limit(page_size)
@@ -417,6 +518,8 @@ def get_user_posts():
 
  
 
+
+# like dislike and share
 @postcreation.route('/v1/posts/<post_id>/action', methods=['PUT'])
 def handle_post_action(post_id):
     user_id = request.headers.get('userId')
