@@ -264,28 +264,28 @@ def register_step1():
 # VALID_API_KEY = "9f8b47de-5c1a-4a6b-8d92-d67c43f7a6c4"
 
 
-def require_api_key(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # Attempt to extract the token from the Authorization header
-        auth_header = request.headers.get('Authorization')
-        if auth_header:
-            # Expecting header value in the format "Bearer <API_KEY>"
-            parts = auth_header.split()
-            if len(parts) == 2 and parts[0].lower() == 'bearer':
-                api_key = parts[1]
-                # Validate the API key
-                if api_key == current_app.config['VALID_API_KEY']:
-                    return f(*args, **kwargs)
-        # If extraction fails or API key is invalid, return an error response
-        return jsonify({'message': 'Invalid or missing API Key', 'status': 'error', 'statusCode': 401}), 401
-    return decorated_function
+# def require_api_key(f):
+#     @wraps(f)
+#     def decorated_function(*args, **kwargs):
+#         # Attempt to extract the token from the Authorization header
+#         auth_header = request.headers.get('Authorization')
+#         if auth_header:
+#             # Expecting header value in the format "Bearer <API_KEY>"
+#             parts = auth_header.split()
+#             if len(parts) == 2 and parts[0].lower() == 'bearer':
+#                 api_key = parts[1]
+#                 # Validate the API key
+#                 if api_key == current_app.config['VALID_API_KEY']:
+#                     return f(*args, **kwargs)
+#         # If extraction fails or API key is invalid, return an error response
+#         return jsonify({'message': 'Invalid or missing API Key', 'status': 'error', 'statusCode': 401}), 401
+#     return decorated_function
 
 
 # login route
 login_bp = Blueprint('login', __name__)
 @login_bp.route('/v1/login', methods=['POST'])
-@require_api_key
+# @require_api_key
 def login():
     try:
         data = request.json
