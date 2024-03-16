@@ -205,7 +205,8 @@ def get_posts():
             'dislikes': post.dislikes,
             'shares': post.shares,
             'comment': post.comment,
-            'viewCount': post.viewCount
+            'viewCount': post.viewCount,
+            "created_at": post.created_at.isoformat() if post.created_at else None
         } for post in paginated_posts]
 
         total_pages = (total_items + page_size - 1) // page_size
