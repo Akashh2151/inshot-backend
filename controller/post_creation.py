@@ -93,10 +93,75 @@ def create_post():
     
 
 
+# @postcreation.route('/v1/searchposts', methods=['GET'])
+# def search_posts():
+#     try:
+#         # Retrieve search parameters from the request's query parameters
+#         title_query = request.args.get('title', '')
+#         summary_query = request.args.get('summary', '')
+#         category_query = request.args.get('category', '')
+#         subcategory_query = request.args.getlist('subcategory')  # This can be a list
+
+#         # Pagination parameters
+#         page = int(request.args.get('page', 1))
+#         pageSize = int(request.args.get('pageSize', 10))
+
+#         # Build the query
+#         query = {
+#             '$and': [
+#                 {'title': {'$regex': title_query, '$options': 'i'}} if title_query else {},
+#                 {'summary': {'$regex': summary_query, '$options': 'i'}} if summary_query else {},
+#                 {'category': category_query} if category_query else {},
+#                 {'subCategory': {'$in': subcategory_query}} if subcategory_query else {},
+#             ]
+#         }
+
+#         # Remove empty conditions
+#         query['$and'] = [condition for condition in query['$and'] if condition]
+
+#         # If no conditions are provided, match all documents
+#         if not query['$and']:
+#             query = {}
+
+#         # Fetch posts with pagination
+#         posts = Post.objects(__raw__=query).skip((page - 1) * pageSize).limit(pageSize)
+
+#         # Prepare the response data
+#         posts_data = [{
+#             "title": post.title,
+#             "summary": post.summary,
+#             "post": post.post,
+#             'postId': str(post.id),
+#             "category": post.category,
+#             "subCategory": post.subCategory,
+#             "likes": post.likes,
+#             "dislikes": post.dislikes,
+#             "shares": post.shares,
+#             "comment": post.comment,
+#             'viewCount': post.viewCount,
+#             "createdAt": post.created_at.isoformat()
+#         } for post in posts]
+
+#         # Construct the response object
+#         response = {
+#             'body': posts_data,
+#             'message': 'Posts fetched successfully' if posts_data else 'No posts found matching the criteria',
+#             'status': 'success',
+#             'statusCode': 200
+#         }
+#         return jsonify(response), 200
+#     except Exception as e:
+#         return jsonify({
+#             'body': {},
+#             'message': f'An error occurred: {str(e)}',
+#             'status': 'error',
+#             'statusCode': 400
+#         }), 400
 @postcreation.route('/v1/searchposts', methods=['GET'])
 def search_posts():
     try:
         # Retrieve search parameters from the request's query parameters
+        general_query = request.args.get('q', '')
         title_query = request.args.get('title', '')
         summary_query = request.args.get('summary', '')
         category_query = request.args.get('category', '')
@@ -106,22 +171,35 @@ def search_posts():
         page = int(request.args.get('page', 1))
         pageSize = int(request.args.get('pageSize', 10))
 
-        # Build the query
-        query = {
-            '$and': [
-                {'title': {'$regex': title_query, '$options': 'i'}} if title_query else {},
-                {'summary': {'$regex': summary_query, '$options': 'i'}} if summary_query else {},
-                {'category': category_query} if category_query else {},
-                {'subCategory': {'$in': subcategory_query}} if subcategory_query else {},
-            ]
-        }
+        # Build the query conditions list
+        query_conditions = []
 
-        # Remove empty conditions
-        query['$and'] = [condition for condition in query['$and'] if condition]
+        # General query condition
+        if general_query:
+            general_condition = {
+                '$or': [
+                    {'title': {'$regex': general_query, '$options': 'i'}},
+                    {'summary': {'$regex': general_query, '$options': 'i'}}
+                ]
+            }
+            query_conditions.append(general_condition)
 
-        # If no conditions are provided, match all documents
-        if not query['$and']:
-            query = {}
+        # Specific title and summary conditions
+        if title_query:
+            query_conditions.append({'title': {'$regex': title_query, '$options': 'i'}})
+        if summary_query:
+            query_conditions.append({'summary': {'$regex': summary_query, '$options': 'i'}})
+
+        # Category and subcategory conditions
+        if category_query:
+            query_conditions.append({'category': category_query})
+        if subcategory_query:
+            query_conditions.append({'subCategory': {'$in': subcategory_query}})
+
+        # Final query
+        query = {}
+        if query_conditions:
+            query['$and'] = query_conditions
 
         # Fetch posts with pagination
         posts = Post.objects(__raw__=query).skip((page - 1) * pageSize).limit(pageSize)
@@ -156,8 +234,7 @@ def search_posts():
             'message': f'An error occurred: {str(e)}',
             'status': 'error',
             'statusCode': 400
-        }), 400
-    
+        }), 400  
 
 
 
