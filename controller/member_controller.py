@@ -1,6 +1,8 @@
+import datetime
+import re
 import uuid
 from flask import Blueprint, jsonify, request, session
-from model.member_model import Dislike, Like, Post, Share
+from model.member_model import Dislike, Like, News, Post, Share
 from werkzeug.exceptions import NotFound, BadRequest
 from model.signInsignup_model import User
 member=Blueprint('member',__name__)
@@ -316,3 +318,163 @@ def like_post(post_id):
 
 
 
+@member.route('/v2/news/create-news', methods=['POST'])
+def create_news():
+    try:
+        data = request.json
+        user_id = request.headers.get('userId')
+        print("user_id", user_id)
+        if not user_id:
+            response = {'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}
+            return jsonify(response), 200
+
+        user = User.objects(id=user_id).first()
+        
+        if not user:
+            response = {'body': {}, 'message': 'The user ID entered does not correspond to an active user',
+                        'status': 'error', 'statusCode': 404}
+            return jsonify(response), 200
+
+        # Extract data from JSON
+        title = data.get('title')
+        summary = data.get('summary')
+        content = data.get('content')
+        created_at_str = data.get('createdAt')  # Retrieve date string from JSON
+        author = data.get('author')
+        reference = data.get('reference')
+        likes = data.get('likes')
+        dislikes = data.get('dislikes')
+        comments = data.get('comments')
+        shares = data.get('shares')
+        viewCount = data.get('viewCount')
+        validTill_str = data.get('validTill')  # Retrieve date string from JSON
+        niche = data.get('niche')
+        category = data.get('category')
+        subCategory = data.get('subCategory')
+        # Add more fields as needed
+
+        # Validate title format
+        if not re.match("^[A-Za-z]+( [A-Za-z]+)*$", title):
+            return jsonify({'body': {}, 'message': 'Title must only contain letters and single spaces between words',
+                            'status': 'error', 'statusCode': 400}), 200
+
+        # Check if a post with the same title already exists
+        existing_post = News.objects(title=title).first()
+        if existing_post:
+            return jsonify({'body': {}, 'message': 'A post with this title already exists', 'status': 'error',
+                            'statusCode': 400}), 200
+
+        # Parse datetime strings to datetime objects
+        created_at = datetime.strptime(created_at_str, '%Y-%m-%dT%H:%M:%S')
+        validTill = datetime.strptime(validTill_str, '%Y-%m-%dT%H:%M:%S')
+
+        # Create and save the post
+        post = News(
+            title=title,
+            summary=summary,
+            content=content,
+            created_At=created_at,
+            author=author,
+            reference=reference,
+            likes=likes,
+            dislikes=dislikes,
+            comments=comments,
+            shares=shares,
+            viewCount=viewCount,
+            validTill=validTill,
+            niche=niche,
+            category=category,
+            subCategory=subCategory,
+        )
+        post.save()
+
+        # Prepare and return response
+        response_data = {
+            'body': data,
+            'message': 'Post created successfully',
+            'postId': str(post.id),
+            'status': 'success',
+            'statusCode': 201
+        }
+        return jsonify(response_data), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+    
+
+
+#news allpost
+# Function for pagination
+def paginate_query(query, page, page_size):
+    skip = (page - 1) * page_size
+    posts = query.skip(skip).limit(page_size)
+    total_items = query.count()
+    return posts, total_items
+@member.route('/v2/news/all-news', methods=['GET'])
+def get_allnews():
+    try:
+        page = int(request.args.get('page', default=1, type=int))
+        pageSize = int(request.args.get('pageSize', default=10, type=int))
+        sort_order = request.args.get('sort', default='asc')  # Default sorting order
+        niche = request.args.get('niche')
+        categories = request.args.get('category')
+        subCategories = request.args.get('subCategory')
+        
+        # Construct query based on provided parameters
+        query = News.objects()
+
+        if niche:
+            query = query.filter(niche__iexact=niche)
+        if categories:
+            query = query.filter(category__iexact=categories)
+        if subCategories:
+            query = query.filter(subCategory__iexact=subCategories)
+
+        # Sort query results
+        if sort_order.lower() == 'asc':
+            query = query.order_by('created_At')
+        elif sort_order.lower() == 'desc':
+            query = query.order_by('-created_At')
+        
+        # Perform pagination
+        paginated_news, total_items = paginate_query(query, page, pageSize)
+
+        # Serialize news data
+        news_data = []
+        for news_item in paginated_news:
+            news_dict = {
+                '_id': str(news_item.id),
+                'title': news_item.title,
+                'summary': news_item.summary,
+                'content': news_item.content,
+                'createdAt': news_item.created_At.strftime('%Y-%m-%d %H:%M:%S'),
+                'author': str(news_item.author),  # Assuming author is a string field
+                'reference': news_item.reference,
+                'likes': news_item.likes,
+                'dislikes': news_item.dislikes,
+                'comments': news_item.comments,
+                'shares': news_item.shares,
+                'viewCount': news_item.viewCount,
+                'validTill': news_item.validTill.strftime('%Y-%m-%d %H:%M:%S'),
+                'niche': news_item.niche,
+                'category': news_item.category,
+                'subCategory': news_item.subCategory
+            }
+            news_data.append(news_dict)
+
+        # Calculate total pages
+        total_pages = -(-total_items // pageSize)  # Ceiling division to get total pages
+
+        response = {
+            'body': news_data,
+            'page': page,
+            'perPage': pageSize,
+            'totalPages': total_pages,
+            'totalPosts': total_items,
+            'message': 'News fetched successfully',
+            'status': 'success',
+            'statusCode': 200
+        }
+        return jsonify(response), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e), 'status': 'error', 'statusCode': 500}), 500
