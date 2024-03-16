@@ -22,6 +22,7 @@ class Post(Document):
     shares = IntField(default=0)
     comment = IntField(default=0)
     viewCount = IntField(default=0)
+    slug = StringField(required=True, unique=True)
     created_at = DateTimeField(default=datetime.datetime.utcnow)
     
 

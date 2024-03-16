@@ -70,16 +70,20 @@ def create_post():
         if not original_title:
             return jsonify({'body': {}, 'message': 'Title is required', 'status': 'error', 'statusCode': 400}), 200
 
-        # Transform title to have dashes between words and convert to lowercase
-        transformed_title = re.sub(r'\s+', '-', original_title.strip()).lower()
+        # Keep the original title as provided by the user
+        title = original_title
 
-        # Check if a post with the same transformed title already exists
-        existing_post = Post.objects(title=transformed_title).first()
+        # Create a slug from the original title: transform to lowercase and replace spaces with dashes
+        slug = re.sub(r'\s+', '-', title.strip()).lower()
+
+        # Check if a post with the same slug already exists
+        existing_post = Post.objects(slug=slug).first()
         if existing_post:
             return jsonify({'body': {}, 'message': 'A post with this title already exists', 'status': 'error', 'statusCode': 400}), 200
 
         post = Post(
-            title=transformed_title,  # Use the transformed, lowercased title here
+            title=title,  # Use the original title here
+            slug=slug,  # Save the slug for URL-friendly identification
             summary=data.get('summary'),
             post=data.get('post'),
             category=data.get('category'),
@@ -87,7 +91,7 @@ def create_post():
             creator=user,
         )
         post.save()
-        return jsonify({'body': data, 'message': 'Post created successfully', 'postId': str(post.id), 'status': 'success', 'statusCode': 201}), 200
+        return jsonify({'body': {'title': title, 'slug': slug, **data}, 'message': 'Post created successfully', 'postId': str(post.id), 'status': 'success', 'statusCode': 201}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
     
