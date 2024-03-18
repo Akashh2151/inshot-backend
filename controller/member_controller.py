@@ -1,56 +1,75 @@
-import datetime
+from datetime import datetime
 import re
 import uuid
 from flask import Blueprint, jsonify, request, session
-from model.member_model import Dislike, Like, News, Post, Share
+from model.member_model import Dislike, Like, News, Post, Share, categories
 from werkzeug.exceptions import NotFound, BadRequest
 from model.signInsignup_model import User
 member=Blueprint('member',__name__)
 
 
+# @member.route('/createcategorys',methods=['POST'])
+# def create_categorys():
+#     try:
+#         data=request.json
+#         cate=data.get('category')
+#         subcate=data.get('subCategory')
 
-
-@member.route('/v1/categories', methods=['GET'])
-def get_posts_by_user_categories():
-    try:
-        
-        # Query all posts regardless of user
-        posts = Post.objects.all()
-       
-
-        # Serialize posts data
-        posts_data = [{
-            'categories': post.category,
-        } for post in posts]
-
-        response = {'body': posts_data, 'message': f'All categories fetched successfully', 'status': 'success', 'statusCode': 200}
-        return jsonify(response), 200
-    except Exception as e:
-        return jsonify({'error': str(e), 'status': 'error', 'statusCode': 500}), 500
-
-
-@member.route('/v1/subCategories', methods=['GET'])
-def get_posts_by_subCategories():
-    try:
-        categories = request.args.get('categories', default=None)
-        
-        posts = Post.objects.filter(category__iexact=categories)
+#         all=categories(
+#             category=cate,
+#             subCategory=subcate
+#         )
+#         all.save()
+#         return jsonify({'s':"succfully"})
     
-        # Serialize posts data
-        posts_data = []
+#     except Exception as e:
+#         return jsonify({'error':str(e)})    
 
-        for post in posts:
-            post_dict = {
+
+
+# Assuming 'categories' is your model and it has fields 'category' and 'subCategory'
+@member.route('/v1/member/categories', methods=['GET'])
+def get_categories_and_subcategories():
+    try:
+        # Check if a specific category is ss
+        categorie = request.args.get('categorie', default=None)
+        
+        if categorie:
+            # Fetch subcategories for the specified category
+            posts = categories.objects.filter(category__iexact=categorie)
+            
+            # Serialize posts data for the specific category
+            posts_data = [{
                 'subCategories': post.subCategory,
-            }
-            posts_data.append(post_dict)
-         
+            } for post in posts]
 
-        response = {'body': posts_data,'categories':categories, 'message': f'subCategories fetched successfully', 'status': 'success', 'statusCode': 200}
+            response = {
+                'body': posts_data,
+                'categories': categorie,
+                'message': f'Subcategories for {categorie} fetched successfully',
+                'status': 'success',
+                'statusCode': 200
+            }
+        else:
+            # Fetch all categories if no specific category is requested
+            posts = categories.objects.all()
+            
+            # Serialize posts data for all categories
+            posts_data = [{
+                'categories': post.category,
+            } for post in posts]
+
+            response = {
+                'body': posts_data,
+                'message': 'All categories fetched successfully',
+                'status': 'success',
+                'statusCode': 200
+            }
+
         return jsonify(response), 200
+
     except Exception as e:
         return jsonify({'error': str(e), 'status': 'error', 'statusCode': 500}), 500
-    
 # _________________________________________________________________________________________________
 # # Function for pagination
 # def paginate_query(query, page, page_size):
@@ -205,6 +224,7 @@ def get_posts():
             'subCategory': post.subCategory,
             'likes': post.likes,
             'dislikes': post.dislikes,
+            "slug":post.slug,
             'shares': post.shares,
             'comment': post.comment,
             'viewCount': post.viewCount,

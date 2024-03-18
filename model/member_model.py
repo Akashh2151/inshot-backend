@@ -1,5 +1,5 @@
 import datetime
-from mongoengine import Document, ReferenceField,DateTimeField,StringField,IntField
+from mongoengine import Document, ReferenceField,DateTimeField,StringField,IntField,ListField
 from model.postCreation_model import Post
 from model.signInsignup_model import User
 
@@ -22,6 +22,11 @@ class News(Document):
     validTill = DateTimeField()
     niche = StringField()
     created_At = DateTimeField(default=datetime.datetime.utcnow)
+
+
+class categories(Document):
+    category=StringField(requred=True)
+    subCategory=ListField(StringField(),required=True)
 
 
 class Like(Document):

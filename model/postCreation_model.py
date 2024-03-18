@@ -24,6 +24,8 @@ class Post(Document):
     viewCount = IntField(default=0)
     slug = StringField(required=True, unique=True)
     created_at = DateTimeField(default=datetime.datetime.utcnow)
+
+
     
 
 class CategoryMapping(Document):
@@ -52,7 +54,7 @@ class Share(Document):
     # user = ReferenceField(required=True,null=True)
     created_at = DateTimeField(default=datetime.datetime.utcnow)
 
- 
+
 # class Reaction(Document):
 #     post = ReferenceField(Post, required=True)
 #     author = ReferenceField(User, required=True)

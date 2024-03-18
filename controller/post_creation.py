@@ -161,6 +161,7 @@ def create_post():
 #             'status': 'error',
 #             'statusCode': 400
 #         }), 400
+    
 @postcreation.route('/v1/searchposts', methods=['GET'])
 def search_posts():
     try:
@@ -219,6 +220,7 @@ def search_posts():
             "likes": post.likes,
             "dislikes": post.dislikes,
             "shares": post.shares,
+            "slug":post.slug,
             "comment": post.comment,
             'viewCount': post.viewCount,
             "createdAt": post.created_at.isoformat()
@@ -338,6 +340,7 @@ def view_post(post_id):
             'category': post.category,
             'subCategory': post.subCategory,
             'likes': post.likes,
+            "slug":post.slug,
             'dislikes': post.dislikes,
             'shares': post.shares,
             'comment': post.comment,
@@ -482,6 +485,7 @@ def get_recent_posts():
                 "title": post.title,
                 "summary": post.summary,
                 "post": post.post,
+                "slug":post.slug,
                 'postId': str(post.id),
                 "category": post.category,
                 "subCategory": post.subCategory,
@@ -540,6 +544,7 @@ def get_recommended_posts():
             "summary": post.summary,
             "post": post.post,
             "category": post.category,
+            "slug":post.slug,
             "subCategory": post.subCategory,
             'postId': str(post.id),
             "likes": post.likes,
@@ -684,6 +689,7 @@ def get_user_posts():
             'post': post.post,
             'category': post.category,
             'postId': str(post.id),
+            "slug":post.slug,
             'subCategory': post.subCategory,
             'likes': post.likes,
             'dislikes': post.dislikes,
