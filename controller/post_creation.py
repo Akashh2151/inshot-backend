@@ -246,7 +246,7 @@ def search_posts():
 
 # Example categories and subcategories structure
 categories = {
-    'Technology': ['Software', 'Hardware', 'AI & Machine Learning'],
+    'Technology': ['Software', 'Hardware', 'AI and Machine Learning'],
     'Health': ['Fitness', 'Nutrition', 'Mental Health'],
     'Education': ['K-12', 'Higher Education', 'Online Learning'],
     'Finance': ['Investing', 'Saving', 'Banking'],
