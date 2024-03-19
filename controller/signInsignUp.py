@@ -307,7 +307,7 @@ def login():
                     'sub': '1',
                     'jti': str(uuid.uuid4()),
                     "name":user.name,
-                    "mobile":user.mobile,
+                    "mobile":user.mobile,   
                     'identity': user.email,
                     # "businessName":user.businessName,
                     # "businessMobile":user.businessMobile,

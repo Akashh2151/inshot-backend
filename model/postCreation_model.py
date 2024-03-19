@@ -51,7 +51,7 @@ class Dislike(Document):
 
 class Share(Document):
     post = ReferenceField(Post, required=True)
-    # user = ReferenceField(required=True,null=True)
+    user = ReferenceField(User, required=True)
     created_at = DateTimeField(default=datetime.datetime.utcnow)
 
 

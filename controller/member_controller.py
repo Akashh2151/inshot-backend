@@ -429,6 +429,7 @@ def paginate_query(query, page, page_size):
     posts = query.skip(skip).limit(page_size)
     total_items = query.count()
     return posts, total_items
+
 @member.route('/v2/news/all-news', methods=['GET'])
 def get_allnews():
     try:

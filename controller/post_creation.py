@@ -49,7 +49,7 @@ postcreation=Blueprint('postcreation',__name__)
 #                 'statusCode': 201}), 200
 #     except Exception as e:
 #         return jsonify({'error': str(e)}), 400
-
+# @postcreation.route('/v1/createpost', methods=['POST'])
 @postcreation.route('/v1/createpost', methods=['POST'])
 def create_post():
     try:
@@ -58,31 +58,29 @@ def create_post():
 
         if not user_id:
             response = {'body': {}, 'message': 'UserID header is missing', 'status': 'error', 'statusCode': 400}
-            return jsonify(response), 200
+            return jsonify(response), 400
 
         user = User.objects(id=user_id).first()
-
         if not user:
             response = {'body': {}, 'message': 'The user ID entered does not correspond to an active user', 'status': 'error', 'statusCode': 404}
-            return jsonify(response), 200
+            return jsonify(response), 404
 
-        original_title = data.get('title')
+        original_title = data.get('title', '').strip()
         if not original_title:
-            return jsonify({'body': {}, 'message': 'Title is required', 'status': 'error', 'statusCode': 400}), 200
+            return jsonify({'body': {}, 'message': 'Title is required', 'status': 'error', 'statusCode': 400}), 400
 
-        # Keep the original title as provided by the user
-        title = original_title
+        # Replace multiple spaces with a single space
+        title = re.sub(r'\s+', ' ', original_title)
 
-        # Create a slug from the original title: transform to lowercase and replace spaces with dashes
-        slug = re.sub(r'\s+', '-', title.strip()).lower()
+        # Create a slug from the cleaned title: transform to lowercase and replace spaces with dashes
+        slug = re.sub(r'\s+', '-', title).lower()
 
         # Check if a post with the same slug already exists
-        existing_post = Post.objects(slug=slug).first()
-        if existing_post:
-            return jsonify({'body': {}, 'message': 'A post with this title already exists', 'status': 'error', 'statusCode': 400}), 200
+        if Post.objects(slug=slug).first():
+            return jsonify({'body': {}, 'message': 'A post with this title already exists', 'status': 'error', 'statusCode': 400}), 400
 
         post = Post(
-            title=title,  # Use the original title here
+            title=title,  # Use the cleaned title here
             slug=slug,  # Save the slug for URL-friendly identification
             summary=data.get('summary'),
             post=data.get('post'),
@@ -91,11 +89,10 @@ def create_post():
             creator=user,
         )
         post.save()
-        return jsonify({'body': {'title': title, 'slug': slug, **data}, 'message': 'Post created successfully', 'postId': str(post.id), 'status': 'success', 'statusCode': 201}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
-    
 
+        return jsonify({'body': {'title': title, 'slug': slug, **data}, 'message': 'Post created successfully', 'postId': str(post.id), 'status': 'success', 'statusCode': 201}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # @postcreation.route('/v1/searchposts', methods=['GET'])
 # def search_posts():
@@ -315,6 +312,7 @@ def get_defcategories():
 def view_post(post_id):
     try:
         post = Post.objects.get(id=post_id)
+        post.update(inc__viewCount=1)
         # Fetch comments for the post
         comments = Comment.objects(post=post).all()
         comments_data = [{
@@ -358,6 +356,7 @@ def view_post(post_id):
         response = {'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}
         return jsonify(response), 500
     
+
 
 # # # recentpost
 # @postcreation.route('/v1/user/posts/recent', methods=['GET'])
@@ -466,44 +465,90 @@ def view_post(post_id):
 #         return jsonify({"message": str(e), "status": "error", "statusCode": 500}), 500
 
 
+# @postcreation.route('/v1/user/posts/recent', methods=['GET'])
+# def get_recent_posts():
+#     # Retrieve query parameters
+#     page = int(request.args.get('page', 1))  # Default to first page if not provided
+#     pageSize = int(request.args.get('pageSize', 10))  # Default size of 4 if not provided
+#     try:
+#         # Calculate skips for pagination
+#         skip = (page - 1) * pageSize
+
+#         # Fetch the pageSize most recent posts globally, sorted by created_at in descending order
+#         recent_posts = Post.objects.order_by('-created_at').skip(skip).limit(pageSize)
+
+#         posts_data = []
+#         for post in recent_posts:
+#             posts_data.append({
+#                 "title": post.title,
+#                 "summary": post.summary,
+#                 "post": post.post,
+#                 "slug":post.slug,
+#                 'postId': str(post.id),
+#                 "category": post.category,
+#                 "subCategory": post.subCategory,
+#                 "likes": post.likes,
+#                 "dislikes": post.dislikes,
+#                 "shares": post.shares,
+#                 "comment": post.comment,
+#                 'viewCount': post.viewCount,
+#                 "createdAt": post.created_at.isoformat()  # Format datetime for JSON serialization
+#             })
+
+#         response = {
+#             "message": "Recent posts retrieved successfully",
+#             "posts": posts_data,
+#             "status": "success",
+#             "statusCode": 200
+#         }
+#         return jsonify(response), 200
+
+#     except Exception as e:
+#         return jsonify({"message": str(e), "status": "error", "statusCode": 500}), 500
+
+
 @postcreation.route('/v1/user/posts/recent', methods=['GET'])
 def get_recent_posts():
-    # Retrieve query parameters
-    page = int(request.args.get('page', 1))  # Default to first page if not provided
-    pageSize = int(request.args.get('pageSize', 10))  # Default size of 4 if not provided
+    page = int(request.args.get('page', 1))
+    pageSize = int(request.args.get('pageSize', 10))
+    category = request.args.get('category', None)
+    subCategory = request.args.get('subCategory', None)
 
     try:
-        # Calculate skips for pagination
         skip = (page - 1) * pageSize
+        query = Post.objects
 
-        # Fetch the pageSize most recent posts globally, sorted by created_at in descending order
-        recent_posts = Post.objects.order_by('-created_at').skip(skip).limit(pageSize)
+        if category:
+            # Case-insensitive search for category
+            query = query.filter(category__iexact=category)
+        if subCategory:
+            # Case-insensitive search for subCategory within a list
+            query = query.filter(subCategory__icontains=subCategory)
 
-        posts_data = []
-        for post in recent_posts:
-            posts_data.append({
-                "title": post.title,
-                "summary": post.summary,
-                "post": post.post,
-                "slug":post.slug,
-                'postId': str(post.id),
-                "category": post.category,
-                "subCategory": post.subCategory,
-                "likes": post.likes,
-                "dislikes": post.dislikes,
-                "shares": post.shares,
-                "comment": post.comment,
-                'viewCount': post.viewCount,
-                "createdAt": post.created_at.isoformat()  # Format datetime for JSON serialization
-            })
+        recent_posts = query.order_by('-created_at').skip(skip).limit(pageSize)
 
-        response = {
+        posts_data = [{
+            "title": post.title,
+            "summary": post.summary,
+            "post": post.post,
+            "slug": post.slug,
+            "postId": str(post.id),
+            "category": post.category,
+            "subCategory": post.subCategory,
+            "likes": post.likes,
+            "dislikes": post.dislikes,
+            "shares": post.shares,
+            "comment": post.comment,
+            "viewCount": post.viewCount,
+            "createdAt": post.created_at.isoformat()
+        } for post in recent_posts]
+
+        return jsonify({
             "message": "Recent posts retrieved successfully",
             "posts": posts_data,
             "status": "success",
             "statusCode": 200
-        }
-        return jsonify(response), 200
+        }), 200
 
     except Exception as e:
         return jsonify({"message": str(e), "status": "error", "statusCode": 500}), 500
@@ -806,19 +851,22 @@ def get_post_interactions(post_id):
 
         # Fetch likes for the post
         likes = Like.objects(post=post).all()
-        like_users = [str(like.user.id) for like in likes]
+        like_users = [str(like.user.id) for like in likes if like.user is not None]
 
         # Fetch dislikes for the post
         dislikes = Dislike.objects(post=post).all()
-        dislike_users = [str(dislike.user.id) for dislike in dislikes]
+        dislike_users = [str(dislike.user.id) for dislike in dislikes if dislike.user is not None]
+
 
         # Fetch comments for the post
         comments = Comment.objects(post=post).all()
-        comment_users = [str(comment.author.id) for comment in comments]
+        comment_users = [str(comment.author.id) for comment in comments if comment.author is not None]
 
-        # Fetch shares for the post
+
+        # # Fetch shares for the post
         shares = Share.objects(post=post).all()
-        share_users = [str(share.user.id) for share in shares]
+        share_users = [str(share.user.id) for share in shares if share.user is not None]
+
 
         return jsonify({
             'message': 'Interactions fetched successfully',
