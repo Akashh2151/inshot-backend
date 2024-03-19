@@ -43,6 +43,7 @@ def get_single_news(news_id):
     except Exception as e:
         return jsonify({'error': str(e), 'status': 'error', 'statusCode': 500}), 500
 
+
 # @member.route('/createcategorys',methods=['POST'])
 # def create_categorys():
 #     try:
