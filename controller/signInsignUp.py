@@ -1,10 +1,8 @@
 from functools import wraps
 import hashlib
 from datetime import datetime, timedelta
-import json
 import re
 import uuid
-import bcrypt
 from bson import ObjectId
 from flask import Blueprint, app, current_app, request, jsonify
 from flask_jwt_extended import jwt_required
