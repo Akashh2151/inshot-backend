@@ -8,6 +8,9 @@ from model.signInsignup_model import User
 member=Blueprint('member',__name__)
 
 
+
+
+
 @member.route('/v2/news/<news_id>', methods=['GET'])
 def get_single_news(news_id):
     try:

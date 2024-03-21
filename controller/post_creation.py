@@ -2,6 +2,7 @@ import re
 from bson import ObjectId
 # from mongoengine import *
 from flask import Blueprint, jsonify,request
+from wtforms import ValidationError
 from model.signInsignup_model import User
 from mongoengine.queryset.visitor import Q
 from model.postCreation_model import   CategoryMapping, Comment, Dislike, Like, Post, Share 
@@ -308,26 +309,35 @@ def get_defcategories():
 
 
 # single post
-@postcreation.route('/v1/posts/<post_id>', methods=['GET'])
-def view_post(post_id):
+@postcreation.route('/v1/posts/<identifier>', methods=['GET'])
+def view_post(identifier):
     try:
-        post = Post.objects.get(id=post_id)
+        # First, attempt to determine if the identifier is an id or a slug by its format
+        # This is a simplistic approach; adjust according to your id and slug formats
+        if len(identifier) == 24:  # Assuming MongoDB's ObjectId format for id
+            try:
+                post = Post.objects.get(id=identifier)
+            except (DoesNotExist, ValidationError):
+                # If fetching by id fails, either due to the post not existing or invalid ObjectId format
+                post = Post.objects.get(slug=identifier)  # Try fetching by slug
+        else:
+            try:
+                post = Post.objects.get(slug=identifier)
+            except DoesNotExist:
+                # If fetching by slug fails, try fetching by id
+                post = Post.objects.get(id=identifier)
+
+        # Once the post is fetched, the rest of your original logic follows
         post.update(inc__viewCount=1)
-        # Fetch comments for the post
         comments = Comment.objects(post=post).all()
         comments_data = [{
             'content': comment.content,
             'authorName': comment.author.name if comment.author else "Anonymous",
         } for comment in comments]
-        
 
-
-        related_subcategories = Post.objects(category=post.category, id__ne=post_id).distinct('subCategory')
-
-        # If you have more subcategories than you need, you might want to limit them to a certain number
+        related_subcategories = Post.objects(category=post.category, id__ne=post.id).distinct('subCategory')
         related_subcategories = related_subcategories[:5] if len(related_subcategories) > 5 else related_subcategories
 
-        
         post_data = {
             'userName': post.creator.name if post.creator else "Unknown",
             'createdAt': post.created_at,
@@ -338,20 +348,23 @@ def view_post(post_id):
             'category': post.category,
             'subCategory': post.subCategory,
             'likes': post.likes,
-            "slug":post.slug,
+            "slug": post.slug,
             'dislikes': post.dislikes,
             'shares': post.shares,
             'comment': post.comment,
-            'viewCount':post.viewCount,
+            'viewCount': post.viewCount,
             'comments': comments_data,
-            'relatedCategories': related_subcategories,  # Add related categories here
+            'relatedCategories': related_subcategories,
         }
-        
+
         response = {'body': post_data, 'message': 'Post retrieved successfully', 'status': 'success', 'statusCode': 200}
         return jsonify(response), 200
     except DoesNotExist:
         response = {'body': {}, 'message': 'Post not found', 'status': 'error', 'statusCode': 404}
         return jsonify(response), 404
+    except ValidationError:
+        response = {'body': {}, 'message': 'Invalid identifier format', 'status': 'error', 'statusCode': 400}
+        return jsonify(response), 400
     except Exception as e:
         response = {'body': {}, 'message': str(e), 'status': 'error', 'statusCode': 500}
         return jsonify(response), 500

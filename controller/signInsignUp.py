@@ -1,16 +1,18 @@
 from functools import wraps
 import hashlib
-import datetime
+from datetime import datetime, timedelta
 import json
 import re
 import uuid
+import bcrypt
 from bson import ObjectId
-from flask import Blueprint, current_app, request, jsonify
+from flask import Blueprint, app, current_app, request, jsonify
 from flask_jwt_extended import jwt_required
 import jwt
  
+ 
 from model.signInsignup_model import  User
-# from configurations.configuration import resto_data,shop_data
+ 
 from security.allSecurity import email_regex,password_regex,phone_number
 import logging
 
@@ -281,81 +283,88 @@ def register_step1():
 #         return jsonify({'message': 'Invalid or missing API Key', 'status': 'error', 'statusCode': 401}), 401
 #     return decorated_function
 
+EXPECTED_ENCRYPTION_KEY = "9f8b47de-5c1a-4a6b-8d92-d67c43f7a6c4"
 
-# login route
+
+# # login route
 login_bp = Blueprint('login', __name__)
 @login_bp.route('/v1/login', methods=['POST'])
 # @require_api_key
 def login():
+   # Extracting the token from the Authorization header
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.lower().startswith('bearer'):
+        # The request contains a Bearer token, attempt to decode it
+        token = auth_header[7:]
+        try:
+            decoded = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+            return jsonify({'body':{},'decoded_token': decoded, 'message': "Token decoded successfully", "status": "success", "statusCode": 200}), 200
+        except jwt.ExpiredSignatureError:
+            return jsonify({'body':{},'message': "The token is expired", "status": "error", "statusCode": 401}), 200
+        except jwt.InvalidTokenError:
+            return jsonify({'body':{},'message': "Invalid token", "status": "error", "statusCode": 401}), 200
+        except Exception as e:
+            return jsonify({'body':{},'message': str(e),'status': 'error','statusCode': 500}), 500
+        
+     # Extract the custom encryption key from the request headers
+    encryption_key = request.headers.get('X-Custom-Encryption-Key')
+
+    # Verify the encryption key
+    if encryption_key != EXPECTED_ENCRYPTION_KEY:
+        return jsonify({'body':{},'message': "Invalid or missing encryption key", "status": "error", "statusCode": 401}), 200
+
     try:
         data = request.json
         email = data.get('email')
         password = data.get('password')
 
-        # Validate the presence of 'email' and 'password'
         if email is None or password is None:
-            return jsonify({'body': {},'message': 'Email and password are required',"status": "error",'statusCode': 400}), 200
+            return jsonify({'body':{},'message': 'Email and password are required', 'status': 'error', 'statusCode': 400}), 200
 
-        # Find the user by email
+        # Replace this with your actual database lookup
         user = User.objects(email=email).first()
 
         if user:
             provided_password_hash = hashlib.sha256(password.encode()).hexdigest()
             if provided_password_hash == user.password:
+                # Set short expiration for the token
+                exp_time = datetime.utcnow() + timedelta(minutes=1)
                 payload = {
-                    'userId': str(user.id),
-                    'sub': '1',
-                    'jti': str(uuid.uuid4()),
-                    "name":user.name,
-                    "mobile":user.mobile,   
-                    'identity': user.email,
-                    # "businessName":user.businessName,
-                    # "businessMobile":user.businessMobile,
-                    # "businessEmail":user.businessEmail,
-                    # "businessAddress":user.businessAddress,
-                    # "businessType":user.businessType,
-                    'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=50),
-                    'type': 'access',
-                    'fresh': True
+                            'sub': '1',
+                            'jti': str(uuid.uuid4()),
+                            'userId': str(user.id),
+                            'exp':  exp_time,
+                            'type': 'access',
+                            'fresh': True
                 }
+
                 token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
-                
 
-                # Check if a bundle is stored for the user
-                # if user.bundle:
-                #     encoded_bundle_data = jwt.encode({'bundle': user.bundle}, current_app.config['SECRET_KEY'], algorithm='HS256')
-                #                         # Prepare the response with the updated user details
-                  
-       
-                updated_user_detail = str(user.name)
-                                        # Include other relevant user details here
-                                    
-                updated_user_details = {
-                        # "bundle": encoded_bundle_data,
-                         "name": updated_user_detail
-                        # "updated_master_details": updated_master,
-                        # "userName":userName
-                         
-                        # Include other relevant user details here
-                    }
-              
-              
-                return jsonify({'body': updated_user_details,
-                                    'message': 'Login successfully',"status": "success", 'accessToken': token,"statusCode": 200,}),200
-                # else:
-                #     return jsonify({'body':{},'message': 'Login successfully', 'accessToken': token, 'statusCode': 200}),200
+                userinfo={
+                       "name":user.name,
+                        "mobile":user.mobile,   
+                        'identity': user.email
+                }
 
+                return jsonify({
+                    "body": userinfo,
+                    'message': 'Login successfully',
+                    'status': 'success',
+                    'accessToken': token,
+                    'expires': exp_time.strftime('%Y-%m-%d %H:%M:%S'),
+                    'statusCode': 200
+                }), 200
             else:
-                return jsonify({'body':{},'message': 'Incorrect password','statusCode': 401,"status": "error"}), 200
-
-        return jsonify({'body': {},'message': 'Invalid email or password',"status": "error", 'statusCode': 401,}), 200
+                return jsonify({'body':{},'message': 'Incorrect password', 'status': 'error', 'statusCode': 401}), 200
+        else:
+            return jsonify({'body':{},'message': 'User not found', 'status': 'error', 'statusCode': 404}), 200
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'body':{},'message': str(e),'status': 'error','statusCode': 500}), 500
+ 
+ 
 
-
-
-    
+        
     
 # @login_bp.route('/protected', methods=['GET'])
 # @jwt_required

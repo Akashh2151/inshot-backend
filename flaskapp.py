@@ -1,3 +1,4 @@
+
 from flask import Flask, jsonify, request
 from flask_jwt_extended import JWTManager
 from controller.signInsignUp import signUp_bp  
@@ -7,6 +8,7 @@ from controller.post_creation import postcreation
 from controller.member_controller import member
 from flask_cors import CORS
 # from controller.shop import shopapp
+ 
 # from controller.shop import newfrom
 # from controller.rating import rating
 # from controller.resto import restoapp
@@ -16,6 +18,10 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '98c5bc0a178ff2d6c0c1471c6f3dc5e4'
+
+ 
+
+ 
 
 app.register_blueprint(signUp_bp)
 app.register_blueprint(login_bp)
@@ -45,6 +51,7 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False  # Set your token expiration as n
 
 # Initialize the Flask-JWT-Extended extension
 jwt = JWTManager(app)
+ 
 
 # Enable CORS for all routes
 CORS(app)
