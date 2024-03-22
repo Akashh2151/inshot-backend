@@ -374,41 +374,41 @@ def like_post(post_id):
     
 
 
-#single news
-@member.route('/v2/news/<news_id>', methods=['GET'])
-def get_single_news(news_id):
-    try:
-        # Retrieve the news item by its ID
-        news_item = News.objects.get(id=news_id)
-        print("news_item",news_item)
+# #single news
+# @member.route('/v2/news/<news_id>', methods=['GET'])
+# def get_single_news(news_id):
+#     try:
+#         # Retrieve the news item by its ID
+#         news_item = News.objects.get(id=news_id)
+#         print("news_item",news_item)
         
-        if not news_item:
-            return jsonify({'message': 'News not found', 'status': 'error', 'statusCode': 404}), 404
+#         if not news_item:
+#             return jsonify({'message': 'News not found', 'status': 'error', 'statusCode': 404}), 404
 
-        # Serialize the news data
-        news_dict = {
-            '_id': str(news_item.id),
-            'title': news_item.title,
-            'summary': news_item.summary,
-            'content': news_item.content,
-            'createdAt': news_item.created_At.strftime('%Y-%m-%d %H:%M:%S'),
-            'author': str(news_item.author),  # Assuming author is a string field
-            'reference': news_item.reference,
-            'likes': news_item.likes,
-            'dislikes': news_item.dislikes,
-            'comments': news_item.comments,
-            'shares': news_item.shares,
-            'viewCount': news_item.viewCount,
-            'validTill': news_item.validTill.strftime('%Y-%m-%d %H:%M:%S'),
-            'niche': news_item.niche,
-            'category': news_item.category,
-            'subCategory': news_item.subCategory
-        }
+#         # Serialize the news data
+#         news_dict = {
+#             '_id': str(news_item.id),
+#             'title': news_item.title,
+#             'summary': news_item.summary,
+#             'content': news_item.content,
+#             'createdAt': news_item.created_At.strftime('%Y-%m-%d %H:%M:%S'),
+#             'author': str(news_item.author),  # Assuming author is a string field
+#             'reference': news_item.reference,
+#             'likes': news_item.likes,
+#             'dislikes': news_item.dislikes,
+#             'comments': news_item.comments,
+#             'shares': news_item.shares,
+#             'viewCount': news_item.viewCount,
+#             'validTill': news_item.validTill.strftime('%Y-%m-%d %H:%M:%S'),
+#             'niche': news_item.niche,
+#             'category': news_item.category,
+#             'subCategory': news_item.subCategory
+#         }
 
-        return jsonify({'body': news_dict, 'message': 'News fetched successfully', 'status': 'success', 'statusCode': 200}), 200
+#         return jsonify({'body': news_dict, 'message': 'News fetched successfully', 'status': 'success', 'statusCode': 200}), 200
 
-    except Exception as e:
-        return jsonify({'error': str(e), 'status': 'error', 'statusCode': 500}), 500
+#     except Exception as e:
+#         return jsonify({'error': str(e), 'status': 'error', 'statusCode': 500}), 500
     
 
 #create news
