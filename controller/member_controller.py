@@ -374,9 +374,44 @@ def like_post(post_id):
     
 
 
+#single news
+@member.route('/v2/news/<news_id>', methods=['GET'])
+def get_single_news(news_id):
+    try:
+        # Retrieve the news item by its ID
+        news_item = News.objects.get(id=news_id)
+        print("news_item",news_item)
+        
+        if not news_item:
+            return jsonify({'message': 'News not found', 'status': 'error', 'statusCode': 404}), 404
 
+        # Serialize the news data
+        news_dict = {
+            '_id': str(news_item.id),
+            'title': news_item.title,
+            'summary': news_item.summary,
+            'content': news_item.content,
+            'createdAt': news_item.created_At.strftime('%Y-%m-%d %H:%M:%S'),
+            'author': str(news_item.author),  # Assuming author is a string field
+            'reference': news_item.reference,
+            'likes': news_item.likes,
+            'dislikes': news_item.dislikes,
+            'comments': news_item.comments,
+            'shares': news_item.shares,
+            'viewCount': news_item.viewCount,
+            'validTill': news_item.validTill.strftime('%Y-%m-%d %H:%M:%S'),
+            'niche': news_item.niche,
+            'category': news_item.category,
+            'subCategory': news_item.subCategory
+        }
 
+        return jsonify({'body': news_dict, 'message': 'News fetched successfully', 'status': 'success', 'statusCode': 200}), 200
 
+    except Exception as e:
+        return jsonify({'error': str(e), 'status': 'error', 'statusCode': 500}), 500
+    
+
+#create news
 @member.route('/v2/news/create-news', methods=['POST'])
 def create_news():
     try:
@@ -412,9 +447,9 @@ def create_news():
         subCategory = data.get('subCategory')
         # Add more fields as needed
 
-        # Validate title format
-        if not re.match("^[A-Za-z]+( [A-Za-z]+)*$", title):
-            return jsonify({'body': {}, 'message': 'Title must only contain letters and single spaces between words',
+        # Validate title format with both single and double spaces allowed
+        if not re.match(r"^[A-Za-z]+(?: {1,2}[A-Za-z]+)*$", title):
+            return jsonify({'body': {}, 'message': 'Title must only contain letters and spaces between words',
                             'status': 'error', 'statusCode': 400}), 200
 
         # Check if a post with the same title already exists
@@ -472,14 +507,14 @@ def paginate_query(query, page, page_size):
 @member.route('/v2/news/all-news', methods=['GET'])
 def get_allnews():
     try:
-        page = int(request.args.get('page', default=1, type=int))
-        pageSize = int(request.args.get('pageSize', default=10, type=int))
-        sort_order = request.args.get('sort', default='asc')  # Default sorting order
+        page = request.args.get('page', default=1, type=int)
+        pageSize = request.args.get('pageSize', default=10, type=int)
+        sort_order = request.args.get('sort', default='asc')
         niche = request.args.get('niche')
         categories = request.args.get('category')
         subCategories = request.args.get('subCategory')
+
         
-        # Construct query based on provided parameters
         query = News.objects()
 
         if niche:
@@ -489,25 +524,27 @@ def get_allnews():
         if subCategories:
             query = query.filter(subCategory__iexact=subCategories)
 
-        # Sort query results
         if sort_order.lower() == 'asc':
             query = query.order_by('created_At')
         elif sort_order.lower() == 'desc':
             query = query.order_by('-created_At')
-        
-        # Perform pagination
-        paginated_news, total_items = paginate_query(query, page, pageSize)
 
-        # Serialize news data
+        if page == 1 and pageSize == float('inf'):
+            news = query.all()  # Retrieve all data without pagination
+            total_items = len(news)
+        else:
+            paginated_news, total_items = paginate_query(query, page, pageSize)
+            news = paginated_news  # Assigning paginated data to 'news'
+
         news_data = []
-        for news_item in paginated_news:
+        for news_item in news:
             news_dict = {
                 '_id': str(news_item.id),
                 'title': news_item.title,
                 'summary': news_item.summary,
                 'content': news_item.content,
                 'createdAt': news_item.created_At.strftime('%Y-%m-%d %H:%M:%S'),
-                'author': str(news_item.author),  # Assuming author is a string field
+                'author': str(news_item.author),
                 'reference': news_item.reference,
                 'likes': news_item.likes,
                 'dislikes': news_item.dislikes,
@@ -521,8 +558,7 @@ def get_allnews():
             }
             news_data.append(news_dict)
 
-        # Calculate total pages
-        total_pages = -(-total_items // pageSize)  # Ceiling division to get total pages
+        total_pages = -(-total_items // pageSize) if pageSize != float('inf') else 1
 
         response = {
             'body': news_data,
