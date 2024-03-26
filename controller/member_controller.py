@@ -498,11 +498,15 @@ def create_news():
 
 #news allpost
 # Function for pagination
+# Function for pagination
 def paginate_query(query, page, page_size):
     skip = (page - 1) * page_size
     posts = query.skip(skip).limit(page_size)
     total_items = query.count()
     return posts, total_items
+
+import traceback
+from mongoengine.errors import DoesNotExist
 
 @member.route('/v2/news/all-news', methods=['GET'])
 def get_allnews():
@@ -514,7 +518,6 @@ def get_allnews():
         categories = request.args.get('category')
         subCategories = request.args.get('subCategory')
 
-        
         query = News.objects()
 
         if niche:
@@ -538,13 +541,18 @@ def get_allnews():
 
         news_data = []
         for news_item in news:
+            try:
+                author = User.objects.get(id=news_item.author.id)
+            except DoesNotExist:
+                author = None
+
             news_dict = {
                 '_id': str(news_item.id),
                 'title': news_item.title,
                 'summary': news_item.summary,
                 'content': news_item.content,
                 'createdAt': news_item.created_At.strftime('%Y-%m-%d %H:%M:%S'),
-                'author': str(news_item.author),
+                'author': str(author) if author else None,
                 'reference': news_item.reference,
                 'likes': news_item.likes,
                 'dislikes': news_item.dislikes,
@@ -573,4 +581,5 @@ def get_allnews():
         return jsonify(response), 200
 
     except Exception as e:
-        return jsonify({'error': str(e), 'status': 'error', 'statusCode': 500}), 500
+        traceback.print_exc()
+        return jsonify({'error': 'An error occurred while processing your request.', 'status': 'error', 'statusCode': 500}), 500
